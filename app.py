@@ -139,7 +139,26 @@ def main():
     
     with col3:
         st.subheader("比較画像2")
-        uploaded_comp2 = st.file_uploader("比較画像2をアップロード", type=['jpg', 'jpeg', 'png'], key="comp2")
+        input_method = st.radio("入力方法を選択", ["ファイルアップロード", "カメラキャプチャ"], key="input_method")
+        
+        uploaded_comp2 = None
+        camera_image = None
+        
+        if input_method == "ファイルアップロード":
+            uploaded_comp2 = st.file_uploader("比較画像2をアップロード", type=['jpg', 'jpeg', 'png'], key="comp2")
+        else:
+            st.write("📷 カメラで画像をキャプチャ")
+            st.info("💡 **カメラ撮影のコツ:**\n- 明るい場所で撮影してください\n- 顔が正面を向くようにしてください\n- カメラから適度な距離を保ってください")
+            camera_image = st.camera_input("写真を撮影してください", key="camera")
+            
+            if camera_image is not None:
+                # カメラ画像をPIL Imageに変換
+                uploaded_comp2 = camera_image
+                st.success("✅ カメラ画像が撮影されました！")
+                
+                # プレビュー表示
+                preview_image = Image.open(camera_image)
+                st.image(preview_image, caption="撮影した画像のプレビュー", width=200)
     
     if mode == "自動解析モード":
         auto_analysis_mode(uploaded_base, uploaded_comp1, uploaded_comp2, col1, col2, col3)
