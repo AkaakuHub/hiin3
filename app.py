@@ -425,14 +425,14 @@ def main():
     st.markdown(
         """
     <div class="app-header">
-        <h1 class="app-title">🎭 顔形状類似度分析アプリ</h1>
+        <h1 class="app-title"> 顔形状類似度分析アプリ</h1>
     </div>
     """,
         unsafe_allow_html=True,
     )
 
     # モード選択セクション
-    st.markdown("### 🎯 分析モード選択")
+    st.markdown("###  分析モード選択")
     mode = st.selectbox(
         "分析モードを選択",
         ["AI自動解析モード", "手動注釈モード"],
@@ -442,15 +442,15 @@ def main():
     # モードの説明
     if "自動" in mode:
         st.info(
-            "💡 **AI自動解析モード**: MediaPipeを使用して顔の特徴点を自動検出し、高精度な類似度分析を実行します。"
+            " **AI自動解析モード**: MediaPipeを使用して顔の特徴点を自動検出し、高精度な類似度分析を実行します。"
         )
     else:
         st.info(
-            "💡 **手動注釈モード**: 手動で特徴点を指定して、カスタマイズされた類似度分析を実行します。"
+            " **手動注釈モード**: 手動で特徴点を指定して、カスタマイズされた類似度分析を実行します。"
         )
 
     # 類似度指標選択
-    st.markdown("### 📊 類似度指標選択")
+    st.markdown("###  類似度指標選択")
     similarity_metric = st.selectbox(
         "類似度指標を選択",
         [
@@ -467,23 +467,23 @@ def main():
     # 指標の説明
     if "総合評価" in similarity_metric:
         st.success(
-            "🎯 **総合評価**: 複数の指標を組み合わせた最も信頼性の高い評価方法です"
+            " **総合評価**: 複数の指標を組み合わせた最も信頼性の高い評価方法です"
         )
     elif "コサイン" in similarity_metric:
-        st.info("📐 **コサイン類似度**: 1に近いほど類似。角度の類似性を測定します")
+        st.info(" **コサイン類似度**: 1に近いほど類似。角度の類似性を測定します")
     elif "ユークリッド" in similarity_metric:
         st.info(
-            "📏 **正規化ユークリッド距離**: 1に近いほど類似。正規化された距離を測定します"
+            " **正規化ユークリッド距離**: 1に近いほど類似。正規化された距離を測定します"
         )
     elif "ハウスドルフ" in similarity_metric:
         st.info(
-            "🎯 **修正ハウスドルフ距離**: 1に近いほど類似。形状の違いを詳細に測定します"
+            " **修正ハウスドルフ距離**: 1に近いほど類似。形状の違いを詳細に測定します"
         )
     else:
-        st.warning("⚠️ **プロクラステス解析**: 0に近いほど類似。")
+        st.warning(" **プロクラステス解析**: 0に近いほど類似。")
 
     # 画像前処理オプション
-    st.markdown("### 🔧 画像前処理設定")
+    st.markdown("###  画像前処理設定")
     image_preprocessing = st.checkbox(
         "自動画像前処理を有効にする（推奨）",
         value=True,
@@ -491,15 +491,15 @@ def main():
     )
 
     if image_preprocessing:
-        st.success("✅ **自動前処理ON**: 画像保護パディング + 800x800リサイズ")
+        st.success(" **自動前処理ON**: 画像保護パディング + 800x800リサイズ")
         with st.expander("前処理の詳細"):
             st.markdown(
                 """
             **前処理内容:**
-            - 🖼️ **画像保護パディング**: 元画像を囲むように黒い帯を追加
-            - 📐 **正方形化**: 縦長・横長どちらも適切に処理
-            - 📏 **800x800リサイズ**: 高品質リサンプリング（LANCZOS）
-            - 🎨 **アノテーション統一**: 点の大きさと位置精度を向上
+            -  **画像保護パディング**: 元画像を囲むように黒い帯を追加
+            -  **正方形化**: 縦長・横長どちらも適切に処理
+            -  **800x800リサイズ**: 高品質リサンプリング（LANCZOS）
+            -  **アノテーション統一**: 点の大きさと位置精度を向上
             
             **メリット:**
             - アノテーション点の大きさが統一される
@@ -509,14 +509,14 @@ def main():
             """
             )
     else:
-        st.info("ℹ️ **自動前処理OFF**: 元画像をそのまま使用（画質による差異あり）")
+        st.info(" **自動前処理OFF**: 元画像をそのまま使用（画質による差異あり）")
 
     st.markdown("</div>", unsafe_allow_html=True)
 
     col1, col2, col3 = st.columns(3, gap="large")
 
     with col1:
-        st.markdown("### 📸 基準画像 (人物A)")
+        st.markdown("###  基準画像 (人物A)")
         st.markdown("**メイン参照として使用される画像**")
         uploaded_base = st.file_uploader(
             "基準画像をアップロード",
@@ -527,12 +527,12 @@ def main():
         if uploaded_base:
             preview_img = Image.open(uploaded_base)
             st.image(
-                preview_img, caption="✅ アップロード完了", use_container_width=True
+                preview_img, caption=" アップロード完了", use_container_width=True
             )
         st.markdown("</div>", unsafe_allow_html=True)
 
     with col2:
-        st.markdown("### 🔄 比較画像1 (人物A)")
+        st.markdown("###  比較画像1 (人物A)")
         st.markdown("**同一人物の別の写真**")
         uploaded_comp1 = st.file_uploader(
             "比較画像1をアップロード",
@@ -543,17 +543,17 @@ def main():
         if uploaded_comp1:
             preview_img = Image.open(uploaded_comp1)
             st.image(
-                preview_img, caption="✅ アップロード完了", use_container_width=True
+                preview_img, caption=" アップロード完了", use_container_width=True
             )
         st.markdown("</div>", unsafe_allow_html=True)
 
     with col3:
-        st.markdown("### 🆚 比較画像2 (人物B)")
+        st.markdown("###  比較画像2 (人物B)")
         st.markdown("**類似度を検証したい別人物**")
 
         input_method = st.radio(
             "入力方法を選択",
-            ["📁 ファイルアップロード", "📷 カメラキャプチャ"],
+            ["📁 ファイルアップロード", "📸 カメラキャプチャ"],
             key="input_method",
             horizontal=True,
         )
@@ -571,29 +571,29 @@ def main():
             if uploaded_comp2:
                 preview_img = Image.open(uploaded_comp2)
                 st.image(
-                    preview_img, caption="✅ アップロード完了", use_container_width=True
+                    preview_img, caption=" アップロード完了", use_container_width=True
                 )
         else:
-            st.markdown("#### 📷 リアルタイム撮影")
+            st.markdown("####  リアルタイム撮影")
             st.markdown(
                 """
             <div style="background: #f0f9ff; padding: 1rem; border-radius: 10px; margin: 1rem 0;">
-                <strong>📷 撮影のコツ:</strong><br>
-                💡 明るい場所で撮影<br>
-                👤 顔が正面を向く<br>
-                📏 適度な距離を保つ
+                <strong> 撮影のコツ:</strong><br>
+                 明るい場所で撮影<br>
+                 顔が正面を向く<br>
+                 適度な距離を保つ
             </div>
             """,
                 unsafe_allow_html=True,
             )
 
-            camera_image = st.camera_input("📸 写真を撮影", key="camera")
+            camera_image = st.camera_input(" 写真を撮影", key="camera")
 
             if camera_image is not None:
                 uploaded_comp2 = camera_image
-                st.success("✅ 撮影完了！")
+                st.success(" 撮影完了！")
                 preview_image = Image.open(camera_image)
-                st.image(preview_image, caption="📸 撮影画像", use_container_width=True)
+                st.image(preview_image, caption=" 撮影画像", use_container_width=True)
 
         st.markdown("</div>", unsafe_allow_html=True)
 
@@ -636,12 +636,12 @@ def auto_analysis_mode(
         progress_bar = st.progress(0)
         status_text = st.empty()
 
-        status_text.text("🔄 AI解析エンジンを初期化中...")
+        status_text.text(" AI解析エンジンを初期化中...")
         progress_bar.progress(10)
         landmarker = initialize_face_landmarker()
 
         if image_preprocessing:
-            status_text.text("📸 画像を前処理中（800x800パディング処理）...")
+            status_text.text(" 画像を前処理中（800x800パディング処理）...")
             progress_bar.progress(30)
 
             # 画像を800x800に自動前処理（パディングで画像保護）
@@ -660,7 +660,7 @@ def auto_analysis_mode(
             comp1_image = np.array(comp1_pil)
             comp2_image = np.array(comp2_pil)
         else:
-            status_text.text("📸 画像を読み込み中...")
+            status_text.text(" 画像を読み込み中...")
             progress_bar.progress(30)
 
             # 前処理なしで元画像をそのまま使用
@@ -669,38 +669,38 @@ def auto_analysis_mode(
             comp2_image = np.array(Image.open(uploaded_comp2).convert("RGB"))
 
         # 処理結果セクション
-        status_text.text("🤖 基準画像(人物A)を解析中...")
+        status_text.text(" 基準画像(人物A)を解析中...")
         progress_bar.progress(50)
         base_landmarks, base_error = extract_landmarks(base_image, landmarker)
 
-        status_text.text("🤖 比較画像1(人物A)を解析中...")
+        status_text.text(" 比較画像1(人物A)を解析中...")
         progress_bar.progress(70)
         comp1_landmarks, comp1_error = extract_landmarks(comp1_image, landmarker)
 
-        status_text.text("🤖 比較画像2(人物B)を解析中...")
+        status_text.text(" 比較画像2(人物B)を解析中...")
         progress_bar.progress(90)
         comp2_landmarks, comp2_error = extract_landmarks(comp2_image, landmarker)
 
-        status_text.text("✅ 解析完了！")
+        status_text.text(" 解析完了！")
         progress_bar.progress(100)
 
         # エラー表示（改良版）
         errors = []
         if base_error:
-            errors.append(f"📸 基準画像(人物A): {base_error}")
+            errors.append(f" 基準画像(人物A): {base_error}")
         if comp1_error:
-            errors.append(f"📸 比較画像1(人物A): {comp1_error}")
+            errors.append(f" 比較画像1(人物A): {comp1_error}")
         if comp2_error:
-            errors.append(f"📸 比較画像2(人物B): {comp2_error}")
+            errors.append(f" 比較画像2(人物B): {comp2_error}")
 
         if errors:
-            st.markdown("### ⚠️ 検出エラー")
+            st.markdown("###  検出エラー")
             for error in errors:
                 st.error(error)
             st.markdown(
                 """
             <div style="background: #fff3cd; padding: 1rem; border-radius: 10px; margin: 1rem 0; color: #31333F;">
-                <strong>💡 改善のヒント:</strong><br>
+                <strong> 改善のヒント:</strong><br>
                 • 顔が画像の中央に明確に写っているか確認<br>
                 • 十分な明るさがあるか確認<br>
                 • 顔が正面または斜め45度以内を向いているか確認<br>
@@ -741,7 +741,7 @@ def auto_analysis_mode(
 
             # 結果表示セクション
             st.markdown("---")
-            st.markdown("### 📊 類似度分析結果")
+            st.markdown("###  類似度分析結果")
 
             difference = abs(similarity1 - similarity2)
 
@@ -757,8 +757,8 @@ def auto_analysis_mode(
                 st.markdown(
                     f"""
                 <div class="winner-card">
-                    <h3>🏆 分析結果</h3>
-                    <h2>🔄 {winner}</h2>
+                    <h3> 分析結果</h3>
+                    <h2> {winner}</h2>
                     <p>が基準画像により類似しています</p>
                     <p><strong>スコア差: {difference:.4f}</strong></p>
                 </div>
@@ -771,8 +771,8 @@ def auto_analysis_mode(
                 st.markdown(
                     f"""
                 <div class="winner-card">
-                    <h3>🏆 分析結果</h3>
-                    <h2>🆚 {winner}</h2>
+                    <h3> 分析結果</h3>
+                    <h2> {winner}</h2>
                     <p>が基準画像により類似しています</p>
                     <p><strong>スコア差: {difference:.4f}</strong></p>
                 </div>
@@ -786,74 +786,74 @@ def auto_analysis_mode(
             )
 
             with detail_col1:
-                st.markdown("#### 📸 基準画像")
+                st.markdown("####  基準画像")
                 st.image(base_annotated, caption="基準", use_container_width=True)
                 st.markdown("</div>", unsafe_allow_html=True)
 
             with detail_col2:
-                st.markdown("#### 🔄 比較画像1")
+                st.markdown("####  比較画像1")
                 st.image(
                     comp1_annotated,
                     caption=f"類似度: {similarity1:.4f}",
                     use_container_width=True,
                 )
                 if winner == "比較画像1(人物A)":
-                    st.success("🏆 より類似")
+                    st.success(" より類似")
                 else:
-                    st.info("📊 類似度低")
+                    st.info(" 類似度低")
 
                 # 指標に応じてヘルプテキストを変更
                 help_text = f"{similarity_metric}（値が{'小さい' if is_procrustes else '大きい'}ほど類似）"
                 st.metric(
-                    label="🔄 基準 vs 比較1",
+                    label=" 基準 vs 比較1",
                     value=f"{similarity1:.4f}",
                     help=help_text,
                 )
                 st.markdown("</div>", unsafe_allow_html=True)
 
             with detail_col3:
-                st.markdown("#### 🆚 比較画像2")
+                st.markdown("####  比較画像2")
                 st.image(
                     comp2_annotated,
                     caption=f"類似度: {similarity2:.4f}",
                     use_container_width=True,
                 )
                 if winner == "比較画像2(人物B)":
-                    st.success("🏆 より類似")
+                    st.success(" より類似")
                 else:
-                    st.info("📊 類似度低")
+                    st.info(" 類似度低")
                 st.metric(
-                    label="🆚 基準 vs 比較2",
+                    label=" 基準 vs 比較2",
                     value=f"{similarity2:.4f}",
                     help=help_text,
                 )
                 st.markdown("</div>", unsafe_allow_html=True)
 
             with detail_col4:
-                st.markdown("#### 📈 分析サマリー")
-                st.write(f"**🏆 最類似:** {winner}")
-                st.write(f"**📊 スコア:** {winner_score:.4f}")
-                st.write(f"**🎯 検出点数:** {len(base_landmarks)}点")
-                st.write("**⚡ 処理:** 正常完了")
-                st.write(f"**📏 類似度差:** {abs(similarity1 - similarity2):.4f}")
+                st.markdown("####  分析サマリー")
+                st.write(f"** 最類似:** {winner}")
+                st.write(f"** スコア:** {winner_score:.4f}")
+                st.write(f"** 検出点数:** {len(base_landmarks)}点")
+                st.write("** 処理:** 正常完了")
+                st.write(f"** 類似度差:** {abs(similarity1 - similarity2):.4f}")
 
                 # 選択された解析手法の説明
-                with st.expander("📚 解析手法について"):
+                with st.expander(" 解析手法について"):
                     if "総合評価" in similarity_metric:
                         st.markdown(
                             """
                         **総合評価（推奨）**
 
-                        📏 **原理:**
+                         **原理:**
                         - コサイン類似度、正規化ユークリッド距離、修正ハウスドルフ距離、プロクラステス解析を組み合わせ
                         - 各手法の長所を活かした総合的な判定
                         - 最も信頼性の高い評価方法
                         
-                        📊 **スコア解釈:**
-                        - `0.80-1.00`: 🟢 非常に類似
-                        - `0.60-0.80`: 🔵 類似
-                        - `0.40-0.60`: 🟡 やや類似
-                        - `0.40未満`: 🔴 類似度低
+                         **スコア解釈:**
+                        - `0.80-1.00`:  非常に類似
+                        - `0.60-0.80`:  類似
+                        - `0.40-0.60`:  やや類似
+                        - `0.40未満`:  類似度低
                         """
                         )
                     elif "コサイン" in similarity_metric:
@@ -861,16 +861,16 @@ def auto_analysis_mode(
                             """
                         **コサイン類似度**
 
-                        📏 **原理:**
+                         **原理:**
                         - ランドマークベクトル間の角度を測定
                         - スケールに依存しない類似性評価
                         - 形状の相対的な関係を重視
                         
-                        📊 **スコア解釈:**
-                        - `0.90-1.00`: 🟢 非常に類似
-                        - `0.70-0.90`: 🔵 類似
-                        - `0.50-0.70`: 🟡 やや類似
-                        - `0.50未満`: 🔴 類似度低
+                         **スコア解釈:**
+                        - `0.90-1.00`:  非常に類似
+                        - `0.70-0.90`:  類似
+                        - `0.50-0.70`:  やや類似
+                        - `0.50未満`:  類似度低
                         """
                         )
                     elif "ユークリッド" in similarity_metric:
@@ -878,16 +878,16 @@ def auto_analysis_mode(
                             """
                         **正規化ユークリッド距離**
 
-                        📏 **原理:**
+                         **原理:**
                         - 正規化された座標間の直線距離を測定
                         - スケールと位置の影響を排除
                         - 絶対的な位置関係を重視
                         
-                        📊 **スコア解釈:**
-                        - `0.80-1.00`: 🟢 非常に類似
-                        - `0.60-0.80`: 🔵 類似
-                        - `0.40-0.60`: 🟡 やや類似
-                        - `0.40未満`: 🔴 類似度低
+                         **スコア解釈:**
+                        - `0.80-1.00`:  非常に類似
+                        - `0.60-0.80`:  類似
+                        - `0.40-0.60`:  やや類似
+                        - `0.40未満`:  類似度低
                         """
                         )
                     elif "ハウスドルフ" in similarity_metric:
@@ -895,16 +895,16 @@ def auto_analysis_mode(
                             """
                         **修正ハウスドルフ距離**
 
-                        📏 **原理:**
+                         **原理:**
                         - 点集合間の最大最小距離を測定
                         - 形状の細かな違いを検出
                         - 部分的な類似性も考慮
                         
-                        📊 **スコア解釈:**
-                        - `0.80-1.00`: 🟢 非常に類似
-                        - `0.60-0.80`: 🔵 類似
-                        - `0.40-0.60`: 🟡 やや類似
-                        - `0.40未満`: 🔴 類似度低
+                         **スコア解釈:**
+                        - `0.80-1.00`:  非常に類似
+                        - `0.60-0.80`:  類似
+                        - `0.40-0.60`:  やや類似
+                        - `0.40未満`:  類似度低
                         """
                         )
                     else:  # プロクラステス
@@ -912,16 +912,16 @@ def auto_analysis_mode(
                             """
                         **プロクラステス解析**
 
-                        📏 **原理:**
+                         **原理:**
                         - 2つの形状の位置・回転・スケールを正規化
                         - 純粋な形状の違いのみを測定
                         - 統計的に信頼性の高い手法
                         
-                        📊 **スコア解釈:**
-                        - `0.00-0.05`: 🟢 非常に類似
-                        - `0.05-0.15`: 🔵 類似
-                        - `0.15-0.30`: 🟡 やや類似
-                        - `0.30以上`: 🔴 類似度低
+                         **スコア解釈:**
+                        - `0.00-0.05`:  非常に類似
+                        - `0.05-0.15`:  類似
+                        - `0.15-0.30`:  やや類似
+                        - `0.30以上`:  類似度低
                         """
                         )
                 st.markdown("</div>", unsafe_allow_html=True)
@@ -937,7 +937,7 @@ def auto_analysis_mode(
             """
         <div style="background: linear-gradient(135deg, #ffeaa7 0%, #fab1a0 100%); color: #31333F;
                     padding: 2rem; border-radius: 15px; text-align: center; margin: 2rem 0;">
-            <h3>📸 画像をアップロードして開始</h3>
+            <h3> 画像をアップロードして開始</h3>
             <p>3つの画像をすべてアップロードすると、AI解析が自動で開始されます</p>
         </div>
         """,
@@ -990,9 +990,9 @@ def manual_annotation_mode(
             }
 
         image_names = [
-            "📸 基準画像(人物A)",
-            "🔄 比較画像1(人物A)",
-            "🆚 比較画像2(人物B)",
+            " 基準画像(人物A)",
+            " 比較画像1(人物A)",
+            " 比較画像2(人物B)",
         ]
         image_keys = ["base", "comp1", "comp2"]
 
@@ -1001,15 +1001,15 @@ def manual_annotation_mode(
 
         # 手動アノテーションヘッダー
         st.markdown('<div class="result-section">', unsafe_allow_html=True)
-        st.markdown("### 🖱️ 手動特徴点アノテーション")
+        st.markdown("###  手動特徴点アノテーション")
 
         # 前処理状況の表示
         if image_preprocessing:
             st.success(
-                "✅ 画像前処理済み: 800x800パディング処理（アノテーション点サイズ統一）"
+                " 画像前処理済み: 800x800パディング処理（アノテーション点サイズ統一）"
             )
         else:
-            st.info("ℹ️ 元画像を使用中（画質による点サイズの差異あり）")
+            st.info(" 元画像を使用中（画質による点サイズの差異あり）")
 
         # プログレス表示
         current_step = st.session_state.current_image_step
@@ -1039,7 +1039,7 @@ def manual_annotation_mode(
                 )
 
                 if i == current_step:
-                    st.success(f"🎯 {name} (クリック対象)")
+                    st.success(f" {name} (クリック対象)")
                     # クリック可能な画像
                     display_width = 400
                     image_height, image_width = plotted_image.shape[:2]
@@ -1072,7 +1072,7 @@ def manual_annotation_mode(
                             st.session_state.current_point_index += 1
                         st.rerun()
                 else:
-                    st.info(f"📋 {name}")
+                    st.info(f" {name}")
                     st.image(plotted_image, use_container_width=True)
 
                 # 現在の点数を表示
@@ -1081,11 +1081,11 @@ def manual_annotation_mode(
                 st.markdown("</div>", unsafe_allow_html=True)
 
         # コントロールパネル
-        st.markdown("### 🎛️ コントロールパネル")
+        st.markdown("###  コントロールパネル")
         btn_col1, btn_col2, btn_col3, btn_col4 = st.columns(4, gap="medium")
 
         with btn_col1:
-            if st.button("⬅️ 前の点に戻る", use_container_width=True):
+            if st.button(" 前の点に戻る", use_container_width=True):
                 if st.session_state.current_image_step > 0:
                     st.session_state.current_image_step -= 1
                 elif total_points > 0:
@@ -1098,14 +1098,14 @@ def manual_annotation_mode(
                 st.rerun()
 
         with btn_col2:
-            if st.button("🗑️ 全て削除", use_container_width=True):
+            if st.button(" 全て削除", use_container_width=True):
                 st.session_state.manual_points = {"base": [], "comp1": [], "comp2": []}
                 st.session_state.current_point_index = 0
                 st.session_state.current_image_step = 0
                 st.rerun()
 
         with btn_col3:
-            if st.button("⏭️ スキップ", use_container_width=True):
+            if st.button(" スキップ", use_container_width=True):
                 if current_step < 2:
                     st.session_state.current_image_step += 1
                 else:
@@ -1117,13 +1117,13 @@ def manual_annotation_mode(
         points_counts = [len(st.session_state.manual_points[k]) for k in image_keys]
         min_points = min(points_counts)
 
-        st.markdown("### 📊 進捗状況")
+        st.markdown("###  進捗状況")
         progress_col1, progress_col2, progress_col3 = st.columns(3, gap="large")
 
         for i, (count, name) in enumerate(zip(points_counts, image_names)):
             with [progress_col1, progress_col2, progress_col3][i]:
                 st.metric(
-                    name.replace("📸 ", "").replace("🔄 ", "").replace("🆚 ", ""),
+                    name.replace(" ", "").replace(" ", "").replace(" ", ""),
                     f"{count}点",
                 )
                 # プログレスバー
@@ -1142,7 +1142,7 @@ def manual_annotation_mode(
         # 類似度計算ボタン
         if min_points >= 3 and len(set(points_counts)) == 1:
             with btn_col4:
-                if st.button("🧮 類似度計算", use_container_width=True, type="primary"):
+                if st.button(" 類似度計算", use_container_width=True, type="primary"):
                     st.session_state.show_manual_results = True
                     base_points = np.array(st.session_state.manual_points["base"])
                     comp1_points = np.array(st.session_state.manual_points["comp1"])
@@ -1173,14 +1173,14 @@ def manual_annotation_mode(
             st.markdown(
                 f"""
             <div style="background: #fff3cd; padding: 1rem; border-radius: 10px; margin: 1rem 0;">
-                <strong>💡 ヒント:</strong> 各画像に最低3点ずつ配置してください。現在: {min_points}点
+                <strong> ヒント:</strong> 各画像に最低3点ずつ配置してください。現在: {min_points}点
             </div>
             """,
                 unsafe_allow_html=True,
             )
         elif len(set(points_counts)) != 1:
             st.warning(
-                f"⚠️ 全ての画像に同じ数の点を配置してください。現在: 基準{points_counts[0]}点, 比較1{points_counts[1]}点, 比較2{points_counts[2]}点"
+                f" 全ての画像に同じ数の点を配置してください。現在: 基準{points_counts[0]}点, 比較1{points_counts[1]}点, 比較2{points_counts[2]}点"
             )
 
         st.markdown("</div>", unsafe_allow_html=True)
@@ -1200,23 +1200,23 @@ def manual_annotation_mode(
 
             # 手動注釈結果セクション
             st.markdown('<div class="result-section">', unsafe_allow_html=True)
-            st.markdown("### 📊 手動注釈による類似度分析結果")
+            st.markdown("###  手動注釈による類似度分析結果")
 
             # メトリクス表示
             result_col1, result_col2, result_col3 = st.columns(3, gap="large")
 
             with result_col1:
-                st.metric("🔄 基準 vs 比較1", f"{similarity1:.4f}", help=help_text)
+                st.metric(" 基準 vs 比較1", f"{similarity1:.4f}", help=help_text)
                 st.markdown("</div>", unsafe_allow_html=True)
 
             with result_col2:
-                st.metric("🆚 基準 vs 比較2", f"{similarity2:.4f}", help=help_text)
+                st.metric(" 基準 vs 比較2", f"{similarity2:.4f}", help=help_text)
                 st.markdown("</div>", unsafe_allow_html=True)
 
             with result_col3:
                 difference = abs(similarity1 - similarity2)
                 st.metric(
-                    "📈 類似度の差", f"{difference:.4f}", help="2つの類似度スコアの差"
+                    " 類似度の差", f"{difference:.4f}", help="2つの類似度スコアの差"
                 )
                 st.markdown("</div>", unsafe_allow_html=True)
 
@@ -1229,8 +1229,8 @@ def manual_annotation_mode(
                 st.markdown(
                     f"""
                 <div class="winner-card">
-                    <h3>🏆 手動分析結果</h3>
-                    <h2>🔄 {winner}</h2>
+                    <h3> 手動分析結果</h3>
+                    <h2> {winner}</h2>
                     <p>が基準画像により類似しています</p>
                     <p><strong>スコア差: {difference:.4f}</strong></p>
                 </div>
@@ -1243,8 +1243,8 @@ def manual_annotation_mode(
                 st.markdown(
                     f"""
                 <div class="winner-card">
-                    <h3>🏆 手動分析結果</h3>
-                    <h2>🆚 {winner}</h2>
+                    <h3> 手動分析結果</h3>
+                    <h2> {winner}</h2>
                     <p>が基準画像により類似しています</p>
                     <p><strong>スコア差: {difference:.4f}</strong></p>
                 </div>
@@ -1253,11 +1253,11 @@ def manual_annotation_mode(
                 )
 
             # アノテーション結果の表示
-            st.markdown("### 🔍 アノテーション結果比較")
+            st.markdown("###  アノテーション結果比較")
             final_col1, final_col2, final_col3, final_col4 = st.columns(4, gap="medium")
 
             with final_col1:
-                st.markdown("#### 📸 基準画像")
+                st.markdown("####  基準画像")
                 base_annotated = draw_manual_points(
                     images["base"], st.session_state.manual_points["base"]
                 )
@@ -1265,7 +1265,7 @@ def manual_annotation_mode(
                 st.markdown("</div>", unsafe_allow_html=True)
 
             with final_col2:
-                st.markdown("#### 🔄 比較画像1")
+                st.markdown("####  比較画像1")
                 comp1_annotated = draw_manual_points(
                     images["comp1"], st.session_state.manual_points["comp1"]
                 )
@@ -1275,18 +1275,18 @@ def manual_annotation_mode(
                     use_container_width=True,
                 )
                 if winner == "比較画像1(人物A)":
-                    st.success("🏆 より類似")
+                    st.success(" より類似")
                 else:
-                    st.info("📊 類似度低")
+                    st.info(" 類似度低")
                 st.metric(
-                    label="🔄 基準 vs 比較1",
+                    label=" 基準 vs 比較1",
                     value=f"{similarity1:.4f}",
                     help=help_text,
                 )
                 st.markdown("</div>", unsafe_allow_html=True)
 
             with final_col3:
-                st.markdown("#### 🆚 比較画像2")
+                st.markdown("####  比較画像2")
                 comp2_annotated = draw_manual_points(
                     images["comp2"], st.session_state.manual_points["comp2"]
                 )
@@ -1296,32 +1296,32 @@ def manual_annotation_mode(
                     use_container_width=True,
                 )
                 if winner == "比較画像2(人物B)":
-                    st.success("🏆 より類似")
+                    st.success(" より類似")
                 else:
-                    st.info("📊 類似度低")
+                    st.info(" 類似度低")
                 st.metric(
-                    label="🆚 基準 vs 比較2",
+                    label=" 基準 vs 比較2",
                     value=f"{similarity2:.4f}",
                     help=help_text,
                 )
                 st.markdown("</div>", unsafe_allow_html=True)
 
             with final_col4:
-                st.markdown("#### 📈 分析サマリー")
-                st.write(f"**🏆 最類似:** {winner}")
-                st.write(f"**📊 スコア:** {winner_score:.4f}")
-                st.write(f"**🎯 総ポイント:** {min_points}点")
+                st.markdown("####  分析サマリー")
+                st.write(f"** 最類似:** {winner}")
+                st.write(f"** スコア:** {winner_score:.4f}")
+                st.write(f"** 総ポイント:** {min_points}点")
                 st.write(
-                    f"**📸 基準画像:** {len(st.session_state.manual_points['base'])}点"
+                    f"** 基準画像:** {len(st.session_state.manual_points['base'])}点"
                 )
                 st.write(
-                    f"**🔄 比較画像1:** {len(st.session_state.manual_points['comp1'])}点"
+                    f"** 比較画像1:** {len(st.session_state.manual_points['comp1'])}点"
                 )
                 st.write(
-                    f"**🆚 比較画像2:** {len(st.session_state.manual_points['comp2'])}点"
+                    f"** 比較画像2:** {len(st.session_state.manual_points['comp2'])}点"
                 )
 
-                if st.button("🔄 結果をクリア", use_container_width=True):
+                if st.button(" 結果をクリア", use_container_width=True):
                     st.session_state.show_manual_results = False
                     st.rerun()
                 st.markdown("</div>", unsafe_allow_html=True)
@@ -1333,9 +1333,9 @@ def manual_annotation_mode(
             """
         <div style="background: linear-gradient(135deg, #ffeaa7 0%, #fab1a0 100%); color: #31333F;
                     padding: 2rem; border-radius: 15px; text-align: center; margin: 2rem 0;">
-            <h3>📷 手動アノテーション</h3>
+            <h3> 手動アノテーション</h3>
             <p>3つの画像をすべてアップロードしてから手動アノテーションを開始してください</p>
-            <p><strong>💡 ヒント:</strong> 同じ特徴点（例：目の角、鼻の先端、口の角など）を各画像で同じ順番でクリックしてください</p>
+            <p><strong> ヒント:</strong> 同じ特徴点（例：目の角、鼻の先端、口の角など）を各画像で同じ順番でクリックしてください</p>
         </div>
         """,
             unsafe_allow_html=True,
