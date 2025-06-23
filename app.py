@@ -573,12 +573,10 @@ def main():
             st.markdown("####  リアルタイム撮影")
             st.markdown(
                 """
-            <div style="background: #f0f9ff; padding: 1rem; border-radius: 10px; margin: 1rem 0;">
-                <strong> 撮影のコツ:</strong><br>
-                 明るい場所で撮影<br>
-                 顔が正面を向く<br>
-                 適度な距離を保つ
-            </div>
+            <strong> 撮影のコツ:</strong><br>
+                明るい場所で撮影<br>
+                顔が正面を向く<br>
+                適度な距離を保つ
             """,
                 unsafe_allow_html=True,
             )
