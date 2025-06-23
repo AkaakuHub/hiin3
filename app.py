@@ -62,9 +62,62 @@ def draw_landmarks_on_image(image, landmarks):
         return image
     
     annotated_image = image.copy()
-    for point in landmarks:
+    height, width = image.shape[:2]
+    
+    # ランドマークのサイズを画像サイズに応じて調整
+    point_size = max(1, min(width, height) // 200)
+    
+    # MediaPipeの顔ランドマーク接続情報（主要な顔の輪郭）
+    connections = [
+        # 顔の輪郭 (0-16)
+        [(i, i+1) for i in range(16)],
+        # 左眉毛 (17-21)
+        [(i, i+1) for i in range(17, 21)],
+        # 右眉毛 (22-26)
+        [(i, i+1) for i in range(22, 26)],
+        # 鼻筋 (27-30)
+        [(i, i+1) for i in range(27, 30)],
+        # 鼻の下部 (31-35)
+        [(i, i+1) for i in range(31, 35)],
+        # 左目 (36-41)
+        [(i, i+1) for i in range(36, 41)] + [(41, 36)],
+        # 右目 (42-47)
+        [(i, i+1) for i in range(42, 47)] + [(47, 42)],
+        # 外唇 (48-59)
+        [(i, i+1) for i in range(48, 59)] + [(59, 48)],
+        # 内唇 (60-67)
+        [(i, i+1) for i in range(60, 67)] + [(67, 60)]
+    ]
+    
+    # 線を描画（MediaPipeの全478点では複雑すぎるので、主要な68点のみ表示）
+    if len(landmarks) >= 68:
+        for connection_group in connections:
+            for start_idx, end_idx in connection_group:
+                if start_idx < len(landmarks) and end_idx < len(landmarks):
+                    start_point = (int(landmarks[start_idx][0]), int(landmarks[start_idx][1]))
+                    end_point = (int(landmarks[end_idx][0]), int(landmarks[end_idx][1]))
+                    cv2.line(annotated_image, start_point, end_point, (0, 255, 255), 1)
+    
+    # 全ポイントを描画
+    for i, point in enumerate(landmarks):
         x, y = int(point[0]), int(point[1])
-        cv2.circle(annotated_image, (x, y), 1, (0, 255, 0), -1)
+        
+        # 重要なランドマークは大きく表示
+        if i < 68:  # 主要な68点
+            if i in [36, 39, 42, 45]:  # 目の角
+                cv2.circle(annotated_image, (x, y), point_size + 1, (255, 0, 0), -1)  # 青
+            elif i in [48, 54]:  # 口の角
+                cv2.circle(annotated_image, (x, y), point_size + 1, (0, 0, 255), -1)  # 赤
+            elif i in [30]:  # 鼻の先端
+                cv2.circle(annotated_image, (x, y), point_size + 1, (255, 255, 0), -1)  # シアン
+            else:
+                cv2.circle(annotated_image, (x, y), point_size, (0, 255, 0), -1)  # 緑
+        else:  # その他の詳細ポイント
+            cv2.circle(annotated_image, (x, y), max(1, point_size // 2), (0, 255, 0), -1)  # 小さい緑
+    
+    # ランドマーク数を画像に表示
+    cv2.putText(annotated_image, f"Points: {len(landmarks)}", 
+                (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
     
     return annotated_image
 
@@ -129,34 +182,132 @@ def auto_analysis_mode(uploaded_base, uploaded_comp1, uploaded_comp2, col1, col2
                 st.write(f"- {error}")
         
         if base_landmarks is not None and comp1_landmarks is not None and comp2_landmarks is not None:
+            # アノテーション付き画像を生成
+            base_annotated = draw_landmarks_on_image(base_image, base_landmarks)
+            comp1_annotated = draw_landmarks_on_image(comp1_image, comp1_landmarks)
+            comp2_annotated = draw_landmarks_on_image(comp2_image, comp2_landmarks)
+            
+            # 元画像とアノテーション画像を表示
+            st.subheader("🔍 顔ランドマーク検出結果")
+            
             with col1:
-                base_annotated = draw_landmarks_on_image(base_image, base_landmarks)
-                st.image(base_annotated, caption="基準画像（ランドマーク付き）", use_container_width=True)
+                st.write("**基準画像**")
+                st.image(base_image, caption="元画像", use_container_width=True)
+                st.image(base_annotated, caption="ランドマーク検出結果", use_container_width=True)
             
             with col2:
-                comp1_annotated = draw_landmarks_on_image(comp1_image, comp1_landmarks)
-                st.image(comp1_annotated, caption="比較画像1（ランドマーク付き）", use_container_width=True)
+                st.write("**比較画像1**")
+                st.image(comp1_image, caption="元画像", use_container_width=True)
+                st.image(comp1_annotated, caption="ランドマーク検出結果", use_container_width=True)
             
             with col3:
-                comp2_annotated = draw_landmarks_on_image(comp2_image, comp2_landmarks)
-                st.image(comp2_annotated, caption="比較画像2（ランドマーク付き）", use_container_width=True)
+                st.write("**比較画像2**")
+                st.image(comp2_image, caption="元画像", use_container_width=True)
+                st.image(comp2_annotated, caption="ランドマーク検出結果", use_container_width=True)
             
+            # 類似度計算
             similarity1 = calculate_procrustes_similarity(base_landmarks, comp1_landmarks)
             similarity2 = calculate_procrustes_similarity(base_landmarks, comp2_landmarks)
             
-            st.subheader("類似度分析結果")
-            col_result1, col_result2 = st.columns(2)
+            # 結果表示セクション
+            st.markdown("---")
+            st.subheader("📊 類似度分析結果")
             
-            with col_result1:
-                st.metric("基準 vs 比較1", f"{similarity1:.4f}", help="値が小さいほど類似")
+            # メトリクス表示
+            col_metric1, col_metric2, col_metric3 = st.columns(3)
             
-            with col_result2:
-                st.metric("基準 vs 比較2", f"{similarity2:.4f}", help="値が小さいほど類似")
+            with col_metric1:
+                st.metric(
+                    label="基準 vs 比較1", 
+                    value=f"{similarity1:.4f}",
+                    delta=None,
+                    help="プロクラステス不一致度（値が小さいほど類似）"
+                )
             
+            with col_metric2:
+                st.metric(
+                    label="基準 vs 比較2", 
+                    value=f"{similarity2:.4f}",
+                    delta=None,
+                    help="プロクラステス不一致度（値が小さいほど類似）"
+                )
+            
+            with col_metric3:
+                difference = abs(similarity1 - similarity2)
+                st.metric(
+                    label="類似度の差", 
+                    value=f"{difference:.4f}",
+                    delta=None,
+                    help="2つの類似度スコアの差"
+                )
+            
+            # 4枚並列比較表示
+            st.subheader("🔍 詳細比較")
+            
+            # より明確な結果表示
             if similarity1 < similarity2:
-                st.success("比較画像1の方が基準画像により類似しています")
+                winner = "比較画像1"
+                winner_score = similarity1
+                loser = "比較画像2"
+                loser_score = similarity2
+                st.success(f"🏆 **{winner}** の方が基準画像により類似しています（スコア差: {difference:.4f}）")
             else:
-                st.success("比較画像2の方が基準画像により類似しています")
+                winner = "比較画像2"
+                winner_score = similarity2
+                loser = "比較画像1"
+                loser_score = similarity1
+                st.success(f"🏆 **{winner}** の方が基準画像により類似しています（スコア差: {difference:.4f}）")
+            
+            # 4枚画像の並列表示
+            col_comp1, col_comp2, col_comp3, col_comp4 = st.columns(4)
+            
+            with col_comp1:
+                st.write("**基準画像**")
+                st.image(base_annotated, caption="基準", use_container_width=True)
+            
+            with col_comp2:
+                st.write("**比較画像1**")
+                border_color = "green" if winner == "比較画像1" else "red"
+                st.image(comp1_annotated, caption=f"類似度: {similarity1:.4f}", use_container_width=True)
+                if winner == "比較画像1":
+                    st.success("✅ より類似")
+                else:
+                    st.info("📊 類似度低")
+            
+            with col_comp3:
+                st.write("**比較画像2**")
+                st.image(comp2_annotated, caption=f"類似度: {similarity2:.4f}", use_container_width=True)
+                if winner == "比較画像2":
+                    st.success("✅ より類似")
+                else:
+                    st.info("📊 類似度低")
+            
+            with col_comp4:
+                st.write("**結果サマリー**")
+                st.write("**🏆 勝者:**")
+                st.write(f"{winner}")
+                st.write(f"スコア: {winner_score:.4f}")
+                st.write("")
+                st.write("**📈 詳細:**")
+                st.write(f"検出点数: {len(base_landmarks)}点")
+                st.write(f"処理時間: 正常完了")
+                
+                # プロクラステス解析の説明
+                with st.expander("📚 プロクラステス解析とは"):
+                    st.write("""
+                    **プロクラステス解析**は2つの形状の類似度を測定する統計手法です。
+                    
+                    📌 **特徴:**
+                    - 位置、回転、スケールの違いを取り除いて形状を比較
+                    - 値が小さいほど形状が類似している
+                    - 顔の特徴点の配置パターンを定量的に比較
+                    
+                    📊 **スコアの解釈:**
+                    - 0.00-0.05: 非常に類似
+                    - 0.05-0.15: 類似
+                    - 0.15-0.30: やや類似
+                    - 0.30以上: 類似度低
+                    """)
         
         else:
             st.warning("画像処理を完了できませんでした。以下を確認してください:")
