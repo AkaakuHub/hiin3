@@ -131,15 +131,15 @@ def auto_analysis_mode(uploaded_base, uploaded_comp1, uploaded_comp2, col1, col2
         if base_landmarks is not None and comp1_landmarks is not None and comp2_landmarks is not None:
             with col1:
                 base_annotated = draw_landmarks_on_image(base_image, base_landmarks)
-                st.image(base_annotated, caption="基準画像（ランドマーク付き）", use_column_width=True)
+                st.image(base_annotated, caption="基準画像（ランドマーク付き）", use_container_width=True)
             
             with col2:
                 comp1_annotated = draw_landmarks_on_image(comp1_image, comp1_landmarks)
-                st.image(comp1_annotated, caption="比較画像1（ランドマーク付き）", use_column_width=True)
+                st.image(comp1_annotated, caption="比較画像1（ランドマーク付き）", use_container_width=True)
             
             with col3:
                 comp2_annotated = draw_landmarks_on_image(comp2_image, comp2_landmarks)
-                st.image(comp2_annotated, caption="比較画像2（ランドマーク付き）", use_column_width=True)
+                st.image(comp2_annotated, caption="比較画像2（ランドマーク付き）", use_container_width=True)
             
             similarity1 = calculate_procrustes_similarity(base_landmarks, comp1_landmarks)
             similarity2 = calculate_procrustes_similarity(base_landmarks, comp2_landmarks)
