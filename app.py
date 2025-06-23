@@ -169,19 +169,19 @@ def main():
     col1, col2, col3 = st.columns(3)
 
     with col1:
-        st.subheader("基準画像")
+        st.subheader("基準画像(人物A)")
         uploaded_base = st.file_uploader(
-            "基準画像をアップロード", type=["jpg", "jpeg", "png"], key="base"
+            "基準画像(人物A)をアップロード", type=["jpg", "jpeg", "png"], key="base"
         )
 
     with col2:
-        st.subheader("比較画像1")
+        st.subheader("比較画像1(人物A)")
         uploaded_comp1 = st.file_uploader(
-            "比較画像1をアップロード", type=["jpg", "jpeg", "png"], key="comp1"
+            "比較画像1(人物A)をアップロード", type=["jpg", "jpeg", "png"], key="comp1"
         )
 
     with col3:
-        st.subheader("比較画像2")
+        st.subheader("比較画像2(人物B)")
         input_method = st.radio(
             "入力方法を選択",
             ["ファイルアップロード", "カメラキャプチャ"],
@@ -193,7 +193,7 @@ def main():
 
         if input_method == "ファイルアップロード":
             uploaded_comp2 = st.file_uploader(
-                "比較画像2をアップロード", type=["jpg", "jpeg", "png"], key="comp2"
+                "比較画像2(人物B)をアップロード", type=["jpg", "jpeg", "png"], key="comp2"
             )
         else:
             st.write("📷 カメラで画像をキャプチャ")
@@ -233,23 +233,23 @@ def auto_analysis_mode(uploaded_base, uploaded_comp1, uploaded_comp2, col1, col2
 
         st.write("### ランドマーク抽出結果")
 
-        st.write("**基準画像の処理:**")
+        st.write("**基準画像(人物A)の処理:**")
         base_landmarks, base_error = extract_landmarks(base_image, landmarker)
 
-        st.write("**比較画像1の処理:**")
+        st.write("**比較画像1(人物A)の処理:**")
         comp1_landmarks, comp1_error = extract_landmarks(comp1_image, landmarker)
 
-        st.write("**比較画像2の処理:**")
+        st.write("**比較画像2(人物B)の処理:**")
         comp2_landmarks, comp2_error = extract_landmarks(comp2_image, landmarker)
 
         # エラー表示
         errors = []
         if base_error:
-            errors.append(f"基準画像: {base_error}")
+            errors.append(f"基準画像(人物A): {base_error}")
         if comp1_error:
-            errors.append(f"比較画像1: {comp1_error}")
+            errors.append(f"比較画像1(人物A): {comp1_error}")
         if comp2_error:
-            errors.append(f"比較画像2: {comp2_error}")
+            errors.append(f"比較画像2(人物B): {comp2_error}")
 
         if errors:
             st.error("以下の画像で問題が発生しました:")
@@ -257,7 +257,9 @@ def auto_analysis_mode(uploaded_base, uploaded_comp1, uploaded_comp2, col1, col2
                 st.write(f"- {error}")
 
         if (
-            base_landmarks is not None and comp1_landmarks is not None and comp2_landmarks is not None
+            base_landmarks is not None
+            and comp1_landmarks is not None
+            and comp2_landmarks is not None
         ):
             # アノテーション付き画像を生成
             base_annotated = draw_landmarks_on_image(base_image, base_landmarks)
@@ -268,7 +270,7 @@ def auto_analysis_mode(uploaded_base, uploaded_comp1, uploaded_comp2, col1, col2
             st.subheader("🔍 顔ランドマーク検出結果")
 
             with col1:
-                st.write("**基準画像**")
+                st.write("**基準画像(人物A)**")
                 st.image(base_image, caption="元画像", use_container_width=True)
                 st.image(
                     base_annotated,
@@ -277,7 +279,7 @@ def auto_analysis_mode(uploaded_base, uploaded_comp1, uploaded_comp2, col1, col2
                 )
 
             with col2:
-                st.write("**比較画像1**")
+                st.write("**比較画像1(人物A)**")
                 st.image(comp1_image, caption="元画像", use_container_width=True)
                 st.image(
                     comp1_annotated,
@@ -286,7 +288,7 @@ def auto_analysis_mode(uploaded_base, uploaded_comp1, uploaded_comp2, col1, col2
                 )
 
             with col3:
-                st.write("**比較画像2**")
+                st.write("**比較画像2(人物B)**")
                 st.image(comp2_image, caption="元画像", use_container_width=True)
                 st.image(
                     comp2_annotated,
@@ -339,45 +341,45 @@ def auto_analysis_mode(uploaded_base, uploaded_comp1, uploaded_comp2, col1, col2
 
             # より明確な結果表示
             if similarity1 < similarity2:
-                winner = "比較画像1"
+                winner = "比較画像1(人物A)"
                 winner_score = similarity1
                 st.success(
-                    f"🏆 **{winner}** の方が基準画像により類似しています（スコア差: {difference:.4f}）"
+                    f"🏆 **{winner}** の方が基準画像(人物A)により類似しています（スコア差: {difference:.4f}）"
                 )
             else:
-                winner = "比較画像2"
+                winner = "比較画像2(人物B)"
                 winner_score = similarity2
                 st.success(
-                    f"🏆 **{winner}** の方が基準画像により類似しています（スコア差: {difference:.4f}）"
+                    f"🏆 **{winner}** の方が基準画像(人物A)により類似しています（スコア差: {difference:.4f}）"
                 )
 
             # 4枚画像の並列表示
             col_comp1, col_comp2, col_comp3, col_comp4 = st.columns(4)
 
             with col_comp1:
-                st.write("**基準画像**")
+                st.write("**基準画像(人物A)**")
                 st.image(base_annotated, caption="基準", use_container_width=True)
 
             with col_comp2:
-                st.write("**比較画像1**")
+                st.write("**比較画像1(人物A)**")
                 st.image(
                     comp1_annotated,
                     caption=f"類似度: {similarity1:.4f}",
                     use_container_width=True,
                 )
-                if winner == "比較画像1":
+                if winner == "比較画像1(人物A)":
                     st.success("✅ より類似")
                 else:
                     st.info("📊 類似度低")
 
             with col_comp3:
-                st.write("**比較画像2**")
+                st.write("**比較画像2(人物B)**")
                 st.image(
                     comp2_annotated,
                     caption=f"類似度: {similarity2:.4f}",
                     use_container_width=True,
                 )
-                if winner == "比較画像2":
+                if winner == "比較画像2(人物B)":
                     st.success("✅ より類似")
                 else:
                     st.info("📊 類似度低")
@@ -435,7 +437,7 @@ def manual_annotation_mode(
             "comp2": np.array(Image.open(uploaded_comp2).convert("RGB")),
         }
 
-        image_names = ["基準画像", "比較画像1", "比較画像2"]
+        image_names = ["基準画像(人物A)", "比較画像1(人物A)", "比較画像2(人物B)"]
         image_keys = ["base", "comp1", "comp2"]
 
         # 現在のポイント数を確認
@@ -557,80 +559,18 @@ def manual_annotation_mode(
         if min_points >= 3 and len(set(points_counts)) == 1:
             with col_btn4:
                 if st.button("🧮 類似度計算"):
+                    # セッション状態に結果を保存して結果表示フラグを設定
+                    st.session_state.show_manual_results = True
                     base_points = np.array(st.session_state.manual_points["base"])
                     comp1_points = np.array(st.session_state.manual_points["comp1"])
                     comp2_points = np.array(st.session_state.manual_points["comp2"])
 
-                    similarity1 = calculate_procrustes_similarity(
-                        base_points, comp1_points
+                    st.session_state.manual_similarity1 = (
+                        calculate_procrustes_similarity(base_points, comp1_points)
                     )
-                    similarity2 = calculate_procrustes_similarity(
-                        base_points, comp2_points
+                    st.session_state.manual_similarity2 = (
+                        calculate_procrustes_similarity(base_points, comp2_points)
                     )
-
-                    st.markdown("---")
-                    st.subheader("📊 手動注釈による類似度分析結果")
-
-                    col_result1, col_result2 = st.columns(2)
-
-                    with col_result1:
-                        st.metric(
-                            "基準 vs 比較1",
-                            f"{similarity1:.4f}",
-                            help="値が小さいほど類似",
-                        )
-
-                    with col_result2:
-                        st.metric(
-                            "基準 vs 比較2",
-                            f"{similarity2:.4f}",
-                            help="値が小さいほど類似",
-                        )
-
-                    if similarity1 < similarity2:
-                        st.success("🏆 比較画像1の方が基準画像により類似しています")
-                    else:
-                        st.success("🏆 比較画像2の方が基準画像により類似しています")
-
-                    # アノテーション結果の4枚表示
-                    st.subheader("🔍 アノテーション結果比較")
-                    result_col1, result_col2, result_col3, result_col4 = st.columns(4)
-
-                    with result_col1:
-                        st.write("**基準画像**")
-                        base_annotated = draw_manual_points(
-                            images["base"], st.session_state.manual_points["base"]
-                        )
-                        st.image(base_annotated, use_container_width=True)
-
-                    with result_col2:
-                        st.write("**比較画像1**")
-                        comp1_annotated = draw_manual_points(
-                            images["comp1"], st.session_state.manual_points["comp1"]
-                        )
-                        st.image(comp1_annotated, use_container_width=True)
-                        st.metric("類似度", f"{similarity1:.4f}")
-
-                    with result_col3:
-                        st.write("**比較画像2**")
-                        comp2_annotated = draw_manual_points(
-                            images["comp2"], st.session_state.manual_points["comp2"]
-                        )
-                        st.image(comp2_annotated, use_container_width=True)
-                        st.metric("類似度", f"{similarity2:.4f}")
-
-                    with result_col4:
-                        st.write("**注釈統計**")
-                        st.write(f"総ポイント数: {min_points}")
-                        st.write(
-                            f"基準画像: {len(st.session_state.manual_points['base'])}点"
-                        )
-                        st.write(
-                            f"比較画像1: {len(st.session_state.manual_points['comp1'])}点"
-                        )
-                        st.write(
-                            f"比較画像2: {len(st.session_state.manual_points['comp2'])}点"
-                        )
 
         elif min_points < 3:
             st.info(
@@ -640,6 +580,114 @@ def manual_annotation_mode(
             st.warning(
                 f"⚠️ 全ての画像に同じ数の点を配置してください。現在: 基準{points_counts[0]}点, 比較1{points_counts[1]}点, 比較2{points_counts[2]}点"
             )
+
+        # 結果表示（画面幅いっぱいに表示）
+        if (
+            hasattr(st.session_state, "show_manual_results")
+            and st.session_state.show_manual_results
+        ):
+            similarity1 = st.session_state.manual_similarity1
+            similarity2 = st.session_state.manual_similarity2
+
+            # 区切り線とヘッダー
+            st.markdown("---")
+            st.subheader("📊 手動注釈による類似度分析結果")
+
+            # メトリクス表示（3列レイアウト）
+            col_metric1, col_metric2, col_metric3 = st.columns(3)
+
+            with col_metric1:
+                st.metric(
+                    "基準 vs 比較1",
+                    f"{similarity1:.4f}",
+                    help="値が小さいほど類似",
+                )
+
+            with col_metric2:
+                st.metric(
+                    "基準 vs 比較2",
+                    f"{similarity2:.4f}",
+                    help="値が小さいほど類似",
+                )
+
+            with col_metric3:
+                difference = abs(similarity1 - similarity2)
+                st.metric(
+                    "類似度の差",
+                    f"{difference:.4f}",
+                    help="2つの類似度スコアの差",
+                )
+
+            # 勝者の発表
+            if similarity1 < similarity2:
+                winner = "比較画像1(人物A)"
+                winner_score = similarity1
+                st.success(
+                    f"🏆 **{winner}** の方が基準画像(人物A)により類似しています（スコア差: {difference:.4f}）"
+                )
+            else:
+                winner = "比較画像2(人物B)"
+                winner_score = similarity2
+                st.success(
+                    f"🏆 **{winner}** の方が基準画像(人物A)により類似しています（スコア差: {difference:.4f}）"
+                )
+
+            # アノテーション結果の4枚表示
+            st.subheader("🔍 アノテーション結果比較")
+            result_col1, result_col2, result_col3, result_col4 = st.columns(4)
+
+            with result_col1:
+                st.write("**基準画像(人物A)**")
+                base_annotated = draw_manual_points(
+                    images["base"], st.session_state.manual_points["base"]
+                )
+                st.image(base_annotated, caption="基準", use_container_width=True)
+
+            with result_col2:
+                st.write("**比較画像1(人物A)**")
+                comp1_annotated = draw_manual_points(
+                    images["comp1"], st.session_state.manual_points["comp1"]
+                )
+                st.image(
+                    comp1_annotated,
+                    caption=f"類似度: {similarity1:.4f}",
+                    use_container_width=True,
+                )
+                if winner == "比較画像1(人物A)":
+                    st.success("✅ より類似")
+                else:
+                    st.info("📊 類似度低")
+
+            with result_col3:
+                st.write("**比較画像2(人物B)**")
+                comp2_annotated = draw_manual_points(
+                    images["comp2"], st.session_state.manual_points["comp2"]
+                )
+                st.image(
+                    comp2_annotated,
+                    caption=f"類似度: {similarity2:.4f}",
+                    use_container_width=True,
+                )
+                if winner == "比較画像2(人物B)":
+                    st.success("✅ より類似")
+                else:
+                    st.info("📊 類似度低")
+
+            with result_col4:
+                st.write("**結果サマリー**")
+                st.write("**🏆 勝者:**")
+                st.write(f"{winner}")
+                st.write(f"スコア: {winner_score:.4f}")
+                st.write("")
+                st.write("**📈 詳細:**")
+                st.write(f"総ポイント数: {min_points}")
+                st.write(f"基準画像(人物A): {len(st.session_state.manual_points['base'])}点")
+                st.write(f"比較画像1(人物A): {len(st.session_state.manual_points['comp1'])}点")
+                st.write(f"比較画像2(人物B): {len(st.session_state.manual_points['comp2'])}点")
+
+                # 結果をリセットするボタン
+                if st.button("🔄 結果をクリア"):
+                    st.session_state.show_manual_results = False
 
     else:
         st.info(
