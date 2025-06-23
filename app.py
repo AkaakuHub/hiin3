@@ -7,6 +7,132 @@ from streamlit_image_coordinates import streamlit_image_coordinates
 from PIL import Image
 
 
+def preprocess_image_to_square(image, target_size=800):
+    """
+    画像を指定サイズの正方形に自動リサイズ・センタークロップ
+
+    Args:
+        image: PIL Image または numpy array
+        target_size: 目標サイズ（正方形）
+
+    Returns:
+        PIL Image: 前処理済みの正方形画像
+    """
+    # numpy arrayの場合はPIL Imageに変換
+    if isinstance(image, np.ndarray):
+        if len(image.shape) == 3:
+            # RGBの場合
+            pil_image = Image.fromarray(image)
+        else:
+            # グレースケールの場合
+            pil_image = Image.fromarray(image, "L")
+    else:
+        pil_image = image.copy()
+
+    # 画像を欠けないようにパディングで正方形化（顔検出は使用しない）
+    pil_image = pad_image_to_square(pil_image)
+
+    # 最終的に指定サイズにリサイズ
+    processed_image = pil_image.resize((target_size, target_size), Image.LANCZOS)
+
+    return processed_image
+
+
+def smart_crop_with_face_detection(pil_image):
+    """
+    顔検出を使用したスマートクロップ
+
+    Args:
+        pil_image: PIL Image
+
+    Returns:
+        PIL Image or None: 顔を中心としたクロップ画像、失敗時はNone
+    """
+    try:
+        # PIL ImageをOpenCV形式に変換
+        cv_image = cv2.cvtColor(np.array(pil_image), cv2.COLOR_RGB2BGR)
+
+        # OpenCVの顔検出器を使用（軽量）
+        face_cascade = cv2.CascadeClassifier(
+            cv2.data.haarcascades + "haarcascade_frontalface_default.xml"
+        )
+        gray = cv2.cvtColor(cv_image, cv2.COLOR_BGR2GRAY)
+
+        # 顔検出
+        faces = face_cascade.detectMultiScale(gray, 1.1, 4)
+
+        if len(faces) > 0:
+            # 最大の顔を基準にクロップ
+            largest_face = max(faces, key=lambda x: x[2] * x[3])
+            x, y, w, h = largest_face
+
+            # 顔の中心を計算
+            face_center_x = x + w // 2
+            face_center_y = y + h // 2
+
+            # 画像のサイズ
+            img_height, img_width = cv_image.shape[:2]
+
+            # 正方形クロップのサイズを決定（顔のサイズの1.5-2倍程度）
+            crop_size = min(img_width, img_height, max(w, h) * 2)
+
+            # クロップ範囲を計算（画像境界内に収める）
+            left = max(0, face_center_x - crop_size // 2)
+            top = max(0, face_center_y - crop_size // 2)
+            right = min(img_width, left + crop_size)
+            bottom = min(img_height, top + crop_size)
+
+            # 境界調整
+            if right - left < crop_size:
+                if left == 0:
+                    right = min(img_width, crop_size)
+                else:
+                    left = max(0, right - crop_size)
+
+            if bottom - top < crop_size:
+                if top == 0:
+                    bottom = min(img_height, crop_size)
+                else:
+                    top = max(0, bottom - crop_size)
+
+            # PIL Imageでクロップ
+            cropped = pil_image.crop((left, top, right, bottom))
+            return cropped
+
+    except Exception as e:
+        st.warning(f"顔検出によるスマートクロップに失敗: {str(e)}")
+
+    return None
+
+
+def pad_image_to_square(pil_image):
+    """
+    画像を正方形にパディング（画像を欠けないように黒い帯を追加）
+
+    Args:
+        pil_image: PIL Image
+
+    Returns:
+        PIL Image: 正方形にパディングされた画像
+    """
+    width, height = pil_image.size
+
+    # 正方形のサイズは長辺に合わせる
+    square_size = max(width, height)
+
+    # 新しい正方形画像を作成（黒背景）
+    square_image = Image.new("RGB", (square_size, square_size), (0, 0, 0))
+
+    # 元画像を中央に配置
+    x_offset = (square_size - width) // 2
+    y_offset = (square_size - height) // 2
+
+    # 元画像を正方形画像の中央に貼り付け
+    square_image.paste(pil_image, (x_offset, y_offset))
+
+    return square_image
+
+
 @st.cache_resource
 def initialize_face_landmarker():
     BaseOptions = mp.tasks.BaseOptions
@@ -372,7 +498,9 @@ def main():
     # モード選択セクション
     st.markdown("### 🎯 分析モード選択")
     mode = st.selectbox(
-        "分析モードを選択", ["AI自動解析モード", "手動注釈モード"], label_visibility="collapsed"
+        "分析モードを選択",
+        ["AI自動解析モード", "手動注釈モード"],
+        label_visibility="collapsed",
     )
 
     # モードの説明
@@ -416,9 +544,36 @@ def main():
             "🎯 **修正ハウスドルフ距離**: 1に近いほど類似。形状の違いを詳細に測定します"
         )
     else:
-        st.warning(
-            "⚠️ **プロクラステス解析**: 0に近いほど類似。"
-        )
+        st.warning("⚠️ **プロクラステス解析**: 0に近いほど類似。")
+
+    # 画像前処理オプション
+    st.markdown("### 🔧 画像前処理設定")
+    image_preprocessing = st.checkbox(
+        "自動画像前処理を有効にする（推奨）",
+        value=True,
+        help="画像を800x800の正方形に自動リサイズし、アノテーション点の大きさを統一します",
+    )
+
+    if image_preprocessing:
+        st.success("✅ **自動前処理ON**: 画像保護パディング + 800x800リサイズ")
+        with st.expander("前処理の詳細"):
+            st.markdown(
+                """
+            **前処理内容:**
+            - 🖼️ **画像保護パディング**: 元画像を囲むように黒い帯を追加
+            - 📐 **正方形化**: 縦長・横長どちらも適切に処理
+            - 📏 **800x800リサイズ**: 高品質リサンプリング（LANCZOS）
+            - 🎨 **アノテーション統一**: 点の大きさと位置精度を向上
+            
+            **メリット:**
+            - アノテーション点の大きさが統一される
+            - 画質による影響を軽減
+            - 画像が欠けることなく全体が保持される
+            - 安全で確実な前処理（顔検出エラーなし）
+            """
+            )
+    else:
+        st.info("ℹ️ **自動前処理OFF**: 元画像をそのまま使用（画質による差異あり）")
 
     st.markdown("</div>", unsafe_allow_html=True)
 
@@ -515,6 +670,7 @@ def main():
             col2,
             col3,
             similarity_metric,
+            image_preprocessing,
         )
     else:
         manual_annotation_mode(
@@ -525,11 +681,19 @@ def main():
             col2,
             col3,
             similarity_metric,
+            image_preprocessing,
         )
 
 
 def auto_analysis_mode(
-    uploaded_base, uploaded_comp1, uploaded_comp2, col1, col2, col3, similarity_metric
+    uploaded_base,
+    uploaded_comp1,
+    uploaded_comp2,
+    col1,
+    col2,
+    col3,
+    similarity_metric,
+    image_preprocessing,
 ):
     if uploaded_base and uploaded_comp1 and uploaded_comp2:
         # プログレスバーと処理状況
@@ -540,12 +704,33 @@ def auto_analysis_mode(
         progress_bar.progress(10)
         landmarker = initialize_face_landmarker()
 
-        status_text.text("📸 画像を前処理中...")
-        progress_bar.progress(30)
+        if image_preprocessing:
+            status_text.text("📸 画像を前処理中（800x800パディング処理）...")
+            progress_bar.progress(30)
 
-        base_image = np.array(Image.open(uploaded_base).convert("RGB"))
-        comp1_image = np.array(Image.open(uploaded_comp1).convert("RGB"))
-        comp2_image = np.array(Image.open(uploaded_comp2).convert("RGB"))
+            # 画像を800x800に自動前処理（パディングで画像保護）
+            base_pil = preprocess_image_to_square(
+                Image.open(uploaded_base).convert("RGB")
+            )
+            comp1_pil = preprocess_image_to_square(
+                Image.open(uploaded_comp1).convert("RGB")
+            )
+            comp2_pil = preprocess_image_to_square(
+                Image.open(uploaded_comp2).convert("RGB")
+            )
+
+            # PIL ImageをNumPy arrayに変換
+            base_image = np.array(base_pil)
+            comp1_image = np.array(comp1_pil)
+            comp2_image = np.array(comp2_pil)
+        else:
+            status_text.text("📸 画像を読み込み中...")
+            progress_bar.progress(30)
+
+            # 前処理なしで元画像をそのまま使用
+            base_image = np.array(Image.open(uploaded_base).convert("RGB"))
+            comp1_image = np.array(Image.open(uploaded_comp1).convert("RGB"))
+            comp2_image = np.array(Image.open(uploaded_comp2).convert("RGB"))
 
         # 処理結果セクション
         status_text.text("🤖 基準画像(人物A)を解析中...")
@@ -670,7 +855,6 @@ def auto_analysis_mode(
                 st.markdown("</div>", unsafe_allow_html=True)
 
             with detail_col2:
-                st.markdown('<div class="">', unsafe_allow_html=True)
                 st.markdown("#### 🔄 比較画像1")
                 st.image(
                     comp1_annotated,
@@ -826,7 +1010,14 @@ def auto_analysis_mode(
 
 
 def manual_annotation_mode(
-    uploaded_base, uploaded_comp1, uploaded_comp2, col1, col2, col3, similarity_metric
+    uploaded_base,
+    uploaded_comp1,
+    uploaded_comp2,
+    col1,
+    col2,
+    col3,
+    similarity_metric,
+    image_preprocessing,
 ):
     # セッション状態の初期化
     if "manual_points" not in st.session_state:
@@ -837,11 +1028,30 @@ def manual_annotation_mode(
         st.session_state.current_image_step = 0  # 0: base, 1: comp1, 2: comp2
 
     if uploaded_base and uploaded_comp1 and uploaded_comp2:
-        images = {
-            "base": np.array(Image.open(uploaded_base).convert("RGB")),
-            "comp1": np.array(Image.open(uploaded_comp1).convert("RGB")),
-            "comp2": np.array(Image.open(uploaded_comp2).convert("RGB")),
-        }
+        if image_preprocessing:
+            # 画像を800x800に自動前処理（パディングで画像保護）
+            base_pil = preprocess_image_to_square(
+                Image.open(uploaded_base).convert("RGB")
+            )
+            comp1_pil = preprocess_image_to_square(
+                Image.open(uploaded_comp1).convert("RGB")
+            )
+            comp2_pil = preprocess_image_to_square(
+                Image.open(uploaded_comp2).convert("RGB")
+            )
+
+            images = {
+                "base": np.array(base_pil),
+                "comp1": np.array(comp1_pil),
+                "comp2": np.array(comp2_pil),
+            }
+        else:
+            # 前処理なしで元画像をそのまま使用
+            images = {
+                "base": np.array(Image.open(uploaded_base).convert("RGB")),
+                "comp1": np.array(Image.open(uploaded_comp1).convert("RGB")),
+                "comp2": np.array(Image.open(uploaded_comp2).convert("RGB")),
+            }
 
         image_names = [
             "📸 基準画像(人物A)",
@@ -856,6 +1066,14 @@ def manual_annotation_mode(
         # 手動アノテーションヘッダー
         st.markdown('<div class="result-section">', unsafe_allow_html=True)
         st.markdown("### 🖱️ 手動特徴点アノテーション")
+
+        # 前処理状況の表示
+        if image_preprocessing:
+            st.success(
+                "✅ 画像前処理済み: 800x800パディング処理（アノテーション点サイズ統一）"
+            )
+        else:
+            st.info("ℹ️ 元画像を使用中（画質による点サイズの差異あり）")
 
         # プログレス表示
         current_step = st.session_state.current_image_step
