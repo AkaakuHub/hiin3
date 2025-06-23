@@ -404,18 +404,16 @@ def main():
     }
     .stHorizontalBlock > div:nth-child(1),
     .stHorizontalBlock > div:nth-child(2) {
-        background: linear-gradient(135deg, #ebf5ff 0%, #f2fafc 100%);
+        background: linear-gradient(135deg, #abd5ff88 0%, #a2dafccc 100%);
         padding: 1rem;
         border-radius: 10px;
     }
     .stHorizontalBlock > div:nth-child(3) {
-        background: linear-gradient(135deg, #fff5e6 0%, #fffaeb 100%);
+        background: linear-gradient(135deg, #ffd5e688 0%, #ffdaebcc 100%);
         padding: 1rem;
         border-radius: 10px;
     }
-    .stHorizontalBlock div {
-        color: #31333F;
-    }
+
     </style>
     """,
         unsafe_allow_html=True,
@@ -424,9 +422,7 @@ def main():
     # アプリヘッダー
     st.markdown(
         """
-    <div class="app-header">
-        <h1 class="app-title"> 顔形状類似度分析アプリ</h1>
-    </div>
+<h1 class="app-title"> 顔形状類似度分析アプリ</h1>
     """,
         unsafe_allow_html=True,
     )
@@ -454,7 +450,7 @@ def main():
     similarity_metric = st.selectbox(
         "類似度指標を選択",
         [
-            "総合評価（推奨）",
+            "総合評価",
             "コサイン類似度",
             "正規化ユークリッド距離",
             "修正ハウスドルフ距離",
@@ -485,7 +481,7 @@ def main():
     # 画像前処理オプション
     st.markdown("###  画像前処理設定")
     image_preprocessing = st.checkbox(
-        "自動画像前処理を有効にする（推奨）",
+        "自動画像前処理を有効にする",
         value=True,
         help="画像を800x800の正方形に自動リサイズし、アノテーション点の大きさを統一します",
     )
@@ -535,7 +531,7 @@ def main():
         st.markdown("###  比較画像1 (人物A)")
         st.markdown("**同一人物の別の写真**")
         uploaded_comp1 = st.file_uploader(
-            "比較画像1をアップロード",
+            "比較画像1(人物A)をアップロード",
             type=["jpg", "jpeg", "png"],
             key="comp1",
             help="人物Aの別角度・別表情の画像を選択してください",
@@ -563,7 +559,7 @@ def main():
 
         if "ファイル" in input_method:
             uploaded_comp2 = st.file_uploader(
-                "比較画像2をアップロード",
+                "比較画像2(人物B)をアップロード",
                 type=["jpg", "jpeg", "png"],
                 key="comp2",
                 help="人物Bの画像を選択してください",
@@ -791,7 +787,7 @@ def auto_analysis_mode(
                 st.markdown("</div>", unsafe_allow_html=True)
 
             with detail_col2:
-                st.markdown("####  比較画像1")
+                st.markdown("####  比較画像1(人物A)")
                 st.image(
                     comp1_annotated,
                     caption=f"類似度: {similarity1:.4f}",
@@ -812,7 +808,7 @@ def auto_analysis_mode(
                 st.markdown("</div>", unsafe_allow_html=True)
 
             with detail_col3:
-                st.markdown("####  比較画像2")
+                st.markdown("####  比較画像2(人物B)")
                 st.image(
                     comp2_annotated,
                     caption=f"類似度: {similarity2:.4f}",
@@ -831,18 +827,18 @@ def auto_analysis_mode(
 
             with detail_col4:
                 st.markdown("####  分析サマリー")
-                st.write(f"** 最類似:** {winner}")
-                st.write(f"** スコア:** {winner_score:.4f}")
-                st.write(f"** 検出点数:** {len(base_landmarks)}点")
-                st.write("** 処理:** 正常完了")
-                st.write(f"** 類似度差:** {abs(similarity1 - similarity2):.4f}")
+                st.markdown(f"最類似:{winner}")
+                st.markdown(f"スコア:{winner_score:.4f}")
+                st.markdown(f"検出点数:{len(base_landmarks)}点")
+                st.markdown("処理:正常完了")
+                st.markdown(f"類似度差:{abs(similarity1 - similarity2):.4f}")
 
                 # 選択された解析手法の説明
                 with st.expander(" 解析手法について"):
                     if "総合評価" in similarity_metric:
                         st.markdown(
                             """
-                        **総合評価（推奨）**
+                        **総合評価**
 
                          **原理:**
                         - コサイン類似度、正規化ユークリッド距離、修正ハウスドルフ距離、プロクラステス解析を組み合わせ
@@ -1265,7 +1261,7 @@ def manual_annotation_mode(
                 st.markdown("</div>", unsafe_allow_html=True)
 
             with final_col2:
-                st.markdown("####  比較画像1")
+                st.markdown("####  比較画像1(人物A)")
                 comp1_annotated = draw_manual_points(
                     images["comp1"], st.session_state.manual_points["comp1"]
                 )
@@ -1286,7 +1282,7 @@ def manual_annotation_mode(
                 st.markdown("</div>", unsafe_allow_html=True)
 
             with final_col3:
-                st.markdown("####  比較画像2")
+                st.markdown("####  比較画像2(人物B)")
                 comp2_annotated = draw_manual_points(
                     images["comp2"], st.session_state.manual_points["comp2"]
                 )
@@ -1308,17 +1304,17 @@ def manual_annotation_mode(
 
             with final_col4:
                 st.markdown("####  分析サマリー")
-                st.write(f"** 最類似:** {winner}")
-                st.write(f"** スコア:** {winner_score:.4f}")
-                st.write(f"** 総ポイント:** {min_points}点")
-                st.write(
-                    f"** 基準画像:** {len(st.session_state.manual_points['base'])}点"
+                st.markdown(f"最類似:{winner}")
+                st.markdown(f"スコア:{winner_score:.4f}")
+                st.markdown(f"総ポイント:{min_points}点")
+                st.markdown(
+                    f"基準画像:{len(st.session_state.manual_points['base'])}点"
                 )
-                st.write(
-                    f"** 比較画像1:** {len(st.session_state.manual_points['comp1'])}点"
+                st.markdown(
+                    f"比較画像1:{len(st.session_state.manual_points['comp1'])}点"
                 )
-                st.write(
-                    f"** 比較画像2:** {len(st.session_state.manual_points['comp2'])}点"
+                st.markdown(
+                    f"比較画像2(人物B):{len(st.session_state.manual_points['comp2'])}点"
                 )
 
                 if st.button(" 結果をクリア", use_container_width=True):
