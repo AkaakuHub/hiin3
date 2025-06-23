@@ -72,6 +72,113 @@ def calculate_procrustes_similarity(landmarks1, landmarks2):
     return disparity
 
 
+def calculate_cosine_similarity(landmarks1, landmarks2):
+    """
+    コサイン類似度による顔ランドマーク類似度計算
+    戻り値: 0-1の範囲で1に近いほど類似
+    """
+    # ランドマークをフラット化して1次元ベクトルに変換
+    vector1 = landmarks1.flatten()
+    vector2 = landmarks2.flatten()
+
+    # 正規化
+    norm1 = np.linalg.norm(vector1)
+    norm2 = np.linalg.norm(vector2)
+
+    if norm1 == 0 or norm2 == 0:
+        return 0.0
+
+    # コサイン類似度計算
+    cosine_sim = np.dot(vector1, vector2) / (norm1 * norm2)
+
+    # 0-1の範囲にクリップ（数値誤差対策）
+    return max(0.0, min(1.0, cosine_sim))
+
+
+def calculate_normalized_euclidean_similarity(landmarks1, landmarks2):
+    """
+    正規化ユークリッド距離による類似度計算
+    戻り値: 0-1の範囲で1に近いほど類似
+    """
+    # 各ランドマークセットを正規化（平均0、標準偏差1）
+    normalized1 = (landmarks1 - np.mean(landmarks1, axis=0)) / (
+        np.std(landmarks1, axis=0) + 1e-8
+    )
+    normalized2 = (landmarks2 - np.mean(landmarks2, axis=0)) / (
+        np.std(landmarks2, axis=0) + 1e-8
+    )
+
+    # ユークリッド距離計算
+    distance = np.sqrt(np.sum((normalized1 - normalized2) ** 2))
+
+    # 距離を類似度に変換（シグモイド関数使用）
+    similarity = 1 / (1 + distance / 10)
+
+    return similarity
+
+
+def calculate_hausdorff_similarity(landmarks1, landmarks2):
+    """
+    修正ハウスドルフ距離による類似度計算
+    戻り値: 0-1の範囲で1に近いほど類似
+    """
+
+    def modified_hausdorff_distance(set1, set2):
+        # set1の各点からset2への最短距離の平均
+        distances1 = []
+        for point in set1:
+            min_dist = min([np.linalg.norm(point - p2) for p2 in set2])
+            distances1.append(min_dist)
+
+        # set2の各点からset1への最短距離の平均
+        distances2 = []
+        for point in set2:
+            min_dist = min([np.linalg.norm(point - p1) for p1 in set1])
+            distances2.append(min_dist)
+
+        # 修正ハウスドルフ距離（平均の最大値）
+        return max(np.mean(distances1), np.mean(distances2))
+
+    # 2D座標のみ使用（z座標は除外）
+    points1 = landmarks1[:, :2]
+    points2 = landmarks2[:, :2]
+
+    # 修正ハウスドルフ距離計算
+    distance = modified_hausdorff_distance(points1, points2)
+
+    # 距離を類似度に変換
+    similarity = 1 / (1 + distance / 50)
+
+    return similarity
+
+
+def calculate_combined_similarity(landmarks1, landmarks2):
+    """
+    複数の類似度指標を組み合わせた総合評価
+    戻り値: 0-1の範囲で1に近いほど類似
+    """
+    # 各指標を計算
+    cosine_sim = calculate_cosine_similarity(landmarks1, landmarks2)
+    euclidean_sim = calculate_normalized_euclidean_similarity(landmarks1, landmarks2)
+    hausdorff_sim = calculate_hausdorff_similarity(landmarks1, landmarks2)
+
+    # プロクラステス距離を類似度に変換
+    procrustes_dist = calculate_procrustes_similarity(landmarks1, landmarks2)
+    procrustes_sim = 1 / (1 + procrustes_dist * 10)
+
+    # 重み付き平均（プロクラステスとコサインを重視）
+    weights = {"cosine": 0.3, "euclidean": 0.2, "hausdorff": 0.2, "procrustes": 0.3}
+
+    combined_similarity = (
+        weights["cosine"] * cosine_sim
+        + weights["euclidean"] * euclidean_sim
+        + weights["hausdorff"] * hausdorff_sim
+        + weights["procrustes"] * procrustes_sim
+    )
+
+    return combined_similarity
+
+
 def draw_landmarks_on_image(image, landmarks):
     if landmarks is None:
         return image
@@ -265,7 +372,7 @@ def main():
     # モード選択セクション
     st.markdown("### 🎯 分析モード選択")
     mode = st.selectbox(
-        "", ["AI自動解析モード", "手動注釈モード"], label_visibility="collapsed"
+        "分析モードを選択", ["AI自動解析モード", "手動注釈モード"], label_visibility="collapsed"
     )
 
     # モードの説明
@@ -277,6 +384,42 @@ def main():
         st.info(
             "💡 **手動注釈モード**: 手動で特徴点を指定して、カスタマイズされた類似度分析を実行します。"
         )
+
+    # 類似度指標選択
+    st.markdown("### 📊 類似度指標選択")
+    similarity_metric = st.selectbox(
+        "類似度指標を選択",
+        [
+            "総合評価（推奨）",
+            "コサイン類似度",
+            "正規化ユークリッド距離",
+            "修正ハウスドルフ距離",
+            "プロクラステス解析",
+        ],
+        label_visibility="collapsed",
+        help="どの類似度指標を使用するかを選択してください",
+    )
+
+    # 指標の説明
+    if "総合評価" in similarity_metric:
+        st.success(
+            "🎯 **総合評価**: 複数の指標を組み合わせた最も信頼性の高い評価方法です"
+        )
+    elif "コサイン" in similarity_metric:
+        st.info("📐 **コサイン類似度**: 1に近いほど類似。角度の類似性を測定します")
+    elif "ユークリッド" in similarity_metric:
+        st.info(
+            "📏 **正規化ユークリッド距離**: 1に近いほど類似。正規化された距離を測定します"
+        )
+    elif "ハウスドルフ" in similarity_metric:
+        st.info(
+            "🎯 **修正ハウスドルフ距離**: 1に近いほど類似。形状の違いを詳細に測定します"
+        )
+    else:
+        st.warning(
+            "⚠️ **プロクラステス解析**: 0に近いほど類似。"
+        )
+
     st.markdown("</div>", unsafe_allow_html=True)
 
     col1, col2, col3 = st.columns(3, gap="large")
@@ -365,15 +508,29 @@ def main():
 
     if "自動" in mode:
         auto_analysis_mode(
-            uploaded_base, uploaded_comp1, uploaded_comp2, col1, col2, col3
+            uploaded_base,
+            uploaded_comp1,
+            uploaded_comp2,
+            col1,
+            col2,
+            col3,
+            similarity_metric,
         )
     else:
         manual_annotation_mode(
-            uploaded_base, uploaded_comp1, uploaded_comp2, col1, col2, col3
+            uploaded_base,
+            uploaded_comp1,
+            uploaded_comp2,
+            col1,
+            col2,
+            col3,
+            similarity_metric,
         )
 
 
-def auto_analysis_mode(uploaded_base, uploaded_comp1, uploaded_comp2, col1, col2, col3):
+def auto_analysis_mode(
+    uploaded_base, uploaded_comp1, uploaded_comp2, col1, col2, col3, similarity_metric
+):
     if uploaded_base and uploaded_comp1 and uploaded_comp2:
         # プログレスバーと処理状況
         progress_bar = st.progress(0)
@@ -444,13 +601,22 @@ def auto_analysis_mode(uploaded_base, uploaded_comp1, uploaded_comp2, col1, col2
             comp2_annotated = draw_landmarks_on_image(comp2_image, comp2_landmarks)
 
             # ランドマーク検出結果表示
-            # 類似度計算
-            similarity1 = calculate_procrustes_similarity(
-                base_landmarks, comp1_landmarks
-            )
-            similarity2 = calculate_procrustes_similarity(
-                base_landmarks, comp2_landmarks
-            )
+            # 類似度計算（選択された指標に応じて）
+            def get_similarity_function(metric):
+                if "総合評価" in metric:
+                    return calculate_combined_similarity
+                elif "コサイン" in metric:
+                    return calculate_cosine_similarity
+                elif "ユークリッド" in metric:
+                    return calculate_normalized_euclidean_similarity
+                elif "ハウスドルフ" in metric:
+                    return calculate_hausdorff_similarity
+                else:  # プロクラステス
+                    return calculate_procrustes_similarity
+
+            similarity_func = get_similarity_function(similarity_metric)
+            similarity1 = similarity_func(base_landmarks, comp1_landmarks)
+            similarity2 = similarity_func(base_landmarks, comp2_landmarks)
 
             # 結果表示セクション
             st.markdown("---")
@@ -458,8 +624,13 @@ def auto_analysis_mode(uploaded_base, uploaded_comp1, uploaded_comp2, col1, col2
 
             difference = abs(similarity1 - similarity2)
 
+            # 指標に応じて勝者判定ロジックを変更
+            is_procrustes = "プロクラステス" in similarity_metric
+
             # 勝者の発表（改良版）
-            if similarity1 < similarity2:
+            if (is_procrustes and similarity1 < similarity2) or (
+                not is_procrustes and similarity1 > similarity2
+            ):
                 winner = "比較画像1(人物A)"
                 winner_score = similarity1
                 st.markdown(
@@ -510,10 +681,13 @@ def auto_analysis_mode(uploaded_base, uploaded_comp1, uploaded_comp2, col1, col2
                     st.success("🏆 より類似")
                 else:
                     st.info("📊 類似度低")
+
+                # 指標に応じてヘルプテキストを変更
+                help_text = f"{similarity_metric}（値が{'小さい' if is_procrustes else '大きい'}ほど類似）"
                 st.metric(
                     label="🔄 基準 vs 比較1",
                     value=f"{similarity1:.4f}",
-                    help="プロクラステス不一致度（値が小さいほど類似）",
+                    help=help_text,
                 )
                 st.markdown("</div>", unsafe_allow_html=True)
 
@@ -531,7 +705,7 @@ def auto_analysis_mode(uploaded_base, uploaded_comp1, uploaded_comp2, col1, col2
                 st.metric(
                     label="🆚 基準 vs 比較2",
                     value=f"{similarity2:.4f}",
-                    help="プロクラステス不一致度（値が小さいほど類似）",
+                    help=help_text,
                 )
                 st.markdown("</div>", unsafe_allow_html=True)
 
@@ -543,24 +717,93 @@ def auto_analysis_mode(uploaded_base, uploaded_comp1, uploaded_comp2, col1, col2
                 st.write("**⚡ 処理:** 正常完了")
                 st.write(f"**📏 類似度差:** {abs(similarity1 - similarity2):.4f}")
 
-                # プロクラステス解析の説明
+                # 選択された解析手法の説明
                 with st.expander("📚 解析手法について"):
-                    st.markdown(
-                        """
-                    **プロクラステス解析**
+                    if "総合評価" in similarity_metric:
+                        st.markdown(
+                            """
+                        **総合評価（推奨）**
 
-                    📏 **原理:**
-                    - 2つの形状の位置・回転・スケールを正規化
-                    - 純粋な形状の違いのみを測定
-                    - 統計的に信頼性の高い手法
-                    
-                    📊 **スコア解釈:**
-                    - `0.00-0.05`: 🟢 非常に類似
-                    - `0.05-0.15`: 🔵 類似
-                    - `0.15-0.30`: 🟡 やや類似
-                    - `0.30以上`: 🔴 類似度低
-                    """
-                    )
+                        📏 **原理:**
+                        - コサイン類似度、正規化ユークリッド距離、修正ハウスドルフ距離、プロクラステス解析を組み合わせ
+                        - 各手法の長所を活かした総合的な判定
+                        - 最も信頼性の高い評価方法
+                        
+                        📊 **スコア解釈:**
+                        - `0.80-1.00`: 🟢 非常に類似
+                        - `0.60-0.80`: 🔵 類似
+                        - `0.40-0.60`: 🟡 やや類似
+                        - `0.40未満`: 🔴 類似度低
+                        """
+                        )
+                    elif "コサイン" in similarity_metric:
+                        st.markdown(
+                            """
+                        **コサイン類似度**
+
+                        📏 **原理:**
+                        - ランドマークベクトル間の角度を測定
+                        - スケールに依存しない類似性評価
+                        - 形状の相対的な関係を重視
+                        
+                        📊 **スコア解釈:**
+                        - `0.90-1.00`: 🟢 非常に類似
+                        - `0.70-0.90`: 🔵 類似
+                        - `0.50-0.70`: 🟡 やや類似
+                        - `0.50未満`: 🔴 類似度低
+                        """
+                        )
+                    elif "ユークリッド" in similarity_metric:
+                        st.markdown(
+                            """
+                        **正規化ユークリッド距離**
+
+                        📏 **原理:**
+                        - 正規化された座標間の直線距離を測定
+                        - スケールと位置の影響を排除
+                        - 絶対的な位置関係を重視
+                        
+                        📊 **スコア解釈:**
+                        - `0.80-1.00`: 🟢 非常に類似
+                        - `0.60-0.80`: 🔵 類似
+                        - `0.40-0.60`: 🟡 やや類似
+                        - `0.40未満`: 🔴 類似度低
+                        """
+                        )
+                    elif "ハウスドルフ" in similarity_metric:
+                        st.markdown(
+                            """
+                        **修正ハウスドルフ距離**
+
+                        📏 **原理:**
+                        - 点集合間の最大最小距離を測定
+                        - 形状の細かな違いを検出
+                        - 部分的な類似性も考慮
+                        
+                        📊 **スコア解釈:**
+                        - `0.80-1.00`: 🟢 非常に類似
+                        - `0.60-0.80`: 🔵 類似
+                        - `0.40-0.60`: 🟡 やや類似
+                        - `0.40未満`: 🔴 類似度低
+                        """
+                        )
+                    else:  # プロクラステス
+                        st.markdown(
+                            """
+                        **プロクラステス解析**
+
+                        📏 **原理:**
+                        - 2つの形状の位置・回転・スケールを正規化
+                        - 純粋な形状の違いのみを測定
+                        - 統計的に信頼性の高い手法
+                        
+                        📊 **スコア解釈:**
+                        - `0.00-0.05`: 🟢 非常に類似
+                        - `0.05-0.15`: 🔵 類似
+                        - `0.15-0.30`: 🟡 やや類似
+                        - `0.30以上`: 🔴 類似度低
+                        """
+                        )
                 st.markdown("</div>", unsafe_allow_html=True)
 
         st.markdown("</div>", unsafe_allow_html=True)
@@ -583,7 +826,7 @@ def auto_analysis_mode(uploaded_base, uploaded_comp1, uploaded_comp2, col1, col2
 
 
 def manual_annotation_mode(
-    uploaded_base, uploaded_comp1, uploaded_comp2, col1, col2, col3
+    uploaded_base, uploaded_comp1, uploaded_comp2, col1, col2, col3, similarity_metric
 ):
     # セッション状態の初期化
     if "manual_points" not in st.session_state:
@@ -751,11 +994,25 @@ def manual_annotation_mode(
                     comp1_points = np.array(st.session_state.manual_points["comp1"])
                     comp2_points = np.array(st.session_state.manual_points["comp2"])
 
-                    st.session_state.manual_similarity1 = (
-                        calculate_procrustes_similarity(base_points, comp1_points)
+                    # 選択された指標に応じて類似度計算
+                    def get_similarity_function(metric):
+                        if "総合評価" in metric:
+                            return calculate_combined_similarity
+                        elif "コサイン" in metric:
+                            return calculate_cosine_similarity
+                        elif "ユークリッド" in metric:
+                            return calculate_normalized_euclidean_similarity
+                        elif "ハウスドルフ" in metric:
+                            return calculate_hausdorff_similarity
+                        else:  # プロクラステス
+                            return calculate_procrustes_similarity
+
+                    similarity_func = get_similarity_function(similarity_metric)
+                    st.session_state.manual_similarity1 = similarity_func(
+                        base_points, comp1_points
                     )
-                    st.session_state.manual_similarity2 = (
-                        calculate_procrustes_similarity(base_points, comp2_points)
+                    st.session_state.manual_similarity2 = similarity_func(
+                        base_points, comp2_points
                     )
 
         elif min_points < 3:
@@ -783,6 +1040,10 @@ def manual_annotation_mode(
             similarity1 = st.session_state.manual_similarity1
             similarity2 = st.session_state.manual_similarity2
 
+            # 指標に応じてヘルプテキストを変更
+            is_procrustes = "プロクラステス" in similarity_metric
+            help_text = f"{similarity_metric}（値が{'小さい' if is_procrustes else '大きい'}ほど類似）"
+
             # 手動注釈結果セクション
             st.markdown('<div class="result-section">', unsafe_allow_html=True)
             st.markdown("### 📊 手動注釈による類似度分析結果")
@@ -791,15 +1052,11 @@ def manual_annotation_mode(
             result_col1, result_col2, result_col3 = st.columns(3, gap="large")
 
             with result_col1:
-                st.metric(
-                    "🔄 基準 vs 比較1", f"{similarity1:.4f}", help="値が小さいほど類似"
-                )
+                st.metric("🔄 基準 vs 比較1", f"{similarity1:.4f}", help=help_text)
                 st.markdown("</div>", unsafe_allow_html=True)
 
             with result_col2:
-                st.metric(
-                    "🆚 基準 vs 比較2", f"{similarity2:.4f}", help="値が小さいほど類似"
-                )
+                st.metric("🆚 基準 vs 比較2", f"{similarity2:.4f}", help=help_text)
                 st.markdown("</div>", unsafe_allow_html=True)
 
             with result_col3:
@@ -809,8 +1066,10 @@ def manual_annotation_mode(
                 )
                 st.markdown("</div>", unsafe_allow_html=True)
 
-            # 勝者の発表
-            if similarity1 < similarity2:
+            # 勝者の発表（指標に応じて判定ロジックを変更）
+            if (is_procrustes and similarity1 < similarity2) or (
+                not is_procrustes and similarity1 > similarity2
+            ):
                 winner = "比較画像1(人物A)"
                 winner_score = similarity1
                 st.markdown(
