@@ -336,86 +336,244 @@ def auto_analysis_mode(uploaded_base, uploaded_comp1, uploaded_comp2, col1, col2
             st.write("- 照明条件が良好か")
 
 def manual_annotation_mode(uploaded_base, uploaded_comp1, uploaded_comp2, col1, col2, col3):
+    # セッション状態の初期化
     if 'manual_points' not in st.session_state:
         st.session_state.manual_points = {'base': [], 'comp1': [], 'comp2': []}
-    
-    target_image = st.radio("注釈対象画像", ["基準画像", "比較画像1", "比較画像2"])
+    if 'current_point_index' not in st.session_state:
+        st.session_state.current_point_index = 0
+    if 'current_image_step' not in st.session_state:
+        st.session_state.current_image_step = 0  # 0: base, 1: comp1, 2: comp2
     
     if uploaded_base and uploaded_comp1 and uploaded_comp2:
         images = {
-            '基準画像': np.array(Image.open(uploaded_base).convert('RGB')),
-            '比較画像1': np.array(Image.open(uploaded_comp1).convert('RGB')),
-            '比較画像2': np.array(Image.open(uploaded_comp2).convert('RGB'))
+            'base': np.array(Image.open(uploaded_base).convert('RGB')),
+            'comp1': np.array(Image.open(uploaded_comp1).convert('RGB')),
+            'comp2': np.array(Image.open(uploaded_comp2).convert('RGB'))
         }
         
-        keys = {'基準画像': 'base', '比較画像1': 'comp1', '比較画像2': 'comp2'}
+        image_names = ['基準画像', '比較画像1', '比較画像2']
+        image_keys = ['base', 'comp1', 'comp2']
         
-        current_key = keys[target_image]
-        current_image = images[target_image]
+        # 現在のポイント数を確認
+        total_points = len(st.session_state.manual_points['base'])
         
-        plotted_image = draw_manual_points(current_image, st.session_state.manual_points[current_key])
+        st.subheader("🖱️ 手動アノテーション")
+        st.info(f"📍 **現在のステップ**: ポイント {total_points + 1} を配置中")
         
-        coords = streamlit_image_coordinates(
-            plotted_image,
-            key=f"coords_{target_image}",
-            width=400
-        )
+        # 3つの画像を横並びで表示
+        col1_img, col2_img, col3_img = st.columns(3)
         
-        if coords is not None:
-            x, y = coords["x"], coords["y"]
-            st.session_state.manual_points[current_key].append([x, y])
-            st.rerun()
+        current_step = st.session_state.current_image_step
+        current_name = image_names[current_step]
         
-        col_button1, col_button2 = st.columns(2)
-        with col_button1:
-            if st.button("最後の点を削除"):
-                if st.session_state.manual_points[current_key]:
-                    st.session_state.manual_points[current_key].pop()
-                    st.rerun()
+        # どの画像にクリックするかを明示
+        st.write(f"👆 **次にクリック**: {current_name}")
         
-        with col_button2:
-            if st.button("全点をクリア"):
-                st.session_state.manual_points[current_key] = []
+        # 3つの画像を表示（現在の対象画像をハイライト）
+        for i, (key, name) in enumerate(zip(image_keys, image_names)):
+            with [col1_img, col2_img, col3_img][i]:
+                plotted_image = draw_manual_points(images[key], st.session_state.manual_points[key])
+                
+                if i == current_step:
+                    st.success(f"✅ {name}（クリック対象）")
+                    # クリック可能な画像 - 固定サイズで表示
+                    display_width = 400
+                    image_height, image_width = plotted_image.shape[:2]
+                    
+                    # アスペクト比を維持して高さを計算
+                    aspect_ratio = image_height / image_width
+                    display_height = int(display_width * aspect_ratio)
+                    
+                    coords = streamlit_image_coordinates(
+                        plotted_image,
+                        key=f"coords_{key}_{st.session_state.current_point_index}",
+                        width=display_width,
+                        height=display_height
+                    )
+                    
+                    if coords is not None:
+                        # 座標をオリジナル画像サイズにスケール変換
+                        scale_x = image_width / display_width
+                        scale_y = image_height / display_height
+                        
+                        original_x = coords["x"] * scale_x
+                        original_y = coords["y"] * scale_y
+                        
+                        st.session_state.manual_points[key].append([original_x, original_y])
+                        
+                        # 次のステップに進む
+                        if current_step < 2:
+                            st.session_state.current_image_step += 1
+                        else:
+                            # 3つの画像すべてに点を配置したら、次のポイントへ
+                            st.session_state.current_image_step = 0
+                            st.session_state.current_point_index += 1
+                        
+                        st.rerun()
+                else:
+                    st.info(f"📋 {name}")
+                    # 表示のみの画像
+                    st.image(plotted_image, use_container_width=True)
+                
+                # 現在の点数を表示
+                point_count = len(st.session_state.manual_points[key])
+                st.write(f"配置済み: {point_count}点")
+        
+        # コントロールボタン
+        st.markdown("---")
+        col_btn1, col_btn2, col_btn3, col_btn4 = st.columns(4)
+        
+        with col_btn1:
+            if st.button("🔙 前の点に戻る"):
+                if st.session_state.current_image_step > 0:
+                    st.session_state.current_image_step -= 1
+                elif total_points > 0:
+                    # 前のポイントセットに戻る
+                    for key in image_keys:
+                        if st.session_state.manual_points[key]:
+                            st.session_state.manual_points[key].pop()
+                    st.session_state.current_image_step = 2
+                    if st.session_state.current_point_index > 0:
+                        st.session_state.current_point_index -= 1
                 st.rerun()
         
-        st.write(f"{target_image}の点数: {len(st.session_state.manual_points[current_key])}")
+        with col_btn2:
+            if st.button("🗑️ 全て削除"):
+                st.session_state.manual_points = {'base': [], 'comp1': [], 'comp2': []}
+                st.session_state.current_point_index = 0
+                st.session_state.current_image_step = 0
+                st.rerun()
         
-        points_counts = [len(st.session_state.manual_points[k]) for k in ['base', 'comp1', 'comp2']]
-        
-        if all(count >= 3 for count in points_counts) and len(set(points_counts)) == 1:
-            if st.button("類似度を計算する"):
-                base_points = np.array(st.session_state.manual_points['base'])
-                comp1_points = np.array(st.session_state.manual_points['comp1'])
-                comp2_points = np.array(st.session_state.manual_points['comp2'])
-                
-                similarity1 = calculate_procrustes_similarity(base_points, comp1_points)
-                similarity2 = calculate_procrustes_similarity(base_points, comp2_points)
-                
-                st.subheader("手動注釈による類似度分析結果")
-                col_result1, col_result2 = st.columns(2)
-                
-                with col_result1:
-                    st.metric("基準 vs 比較1", f"{similarity1:.4f}", help="値が小さいほど類似")
-                
-                with col_result2:
-                    st.metric("基準 vs 比較2", f"{similarity2:.4f}", help="値が小さいほど類似")
-                
-                if similarity1 < similarity2:
-                    st.success("比較画像1の方が基準画像により類似しています")
+        with col_btn3:
+            if st.button("⏭️ スキップ"):
+                # 現在の画像をスキップして次へ
+                if current_step < 2:
+                    st.session_state.current_image_step += 1
                 else:
-                    st.success("比較画像2の方が基準画像により類似しています")
+                    st.session_state.current_image_step = 0
+                    st.session_state.current_point_index += 1
+                st.rerun()
         
-        elif any(count > 0 for count in points_counts):
-            st.info(f"全ての画像に同数の点（3点以上）をプロットしてください。現在: 基準{points_counts[0]}点, 比較1{points_counts[1]}点, 比較2{points_counts[2]}点")
+        # 進捗表示
+        points_counts = [len(st.session_state.manual_points[k]) for k in image_keys]
+        min_points = min(points_counts)
+        
+        st.write("📊 **進捗状況**:")
+        progress_col1, progress_col2, progress_col3 = st.columns(3)
+        
+        for i, (count, name) in enumerate(zip(points_counts, image_names)):
+            with [progress_col1, progress_col2, progress_col3][i]:
+                st.metric(name, f"{count}点")
+        
+        # 類似度計算
+        if min_points >= 3 and len(set(points_counts)) == 1:
+            with col_btn4:
+                if st.button("🧮 類似度計算"):
+                    base_points = np.array(st.session_state.manual_points['base'])
+                    comp1_points = np.array(st.session_state.manual_points['comp1'])
+                    comp2_points = np.array(st.session_state.manual_points['comp2'])
+                    
+                    similarity1 = calculate_procrustes_similarity(base_points, comp1_points)
+                    similarity2 = calculate_procrustes_similarity(base_points, comp2_points)
+                    
+                    st.markdown("---")
+                    st.subheader("📊 手動注釈による類似度分析結果")
+                    
+                    col_result1, col_result2 = st.columns(2)
+                    
+                    with col_result1:
+                        st.metric("基準 vs 比較1", f"{similarity1:.4f}", help="値が小さいほど類似")
+                    
+                    with col_result2:
+                        st.metric("基準 vs 比較2", f"{similarity2:.4f}", help="値が小さいほど類似")
+                    
+                    if similarity1 < similarity2:
+                        st.success("🏆 比較画像1の方が基準画像により類似しています")
+                    else:
+                        st.success("🏆 比較画像2の方が基準画像により類似しています")
+                    
+                    # アノテーション結果の4枚表示
+                    st.subheader("🔍 アノテーション結果比較")
+                    result_col1, result_col2, result_col3, result_col4 = st.columns(4)
+                    
+                    with result_col1:
+                        st.write("**基準画像**")
+                        base_annotated = draw_manual_points(images['base'], st.session_state.manual_points['base'])
+                        st.image(base_annotated, use_container_width=True)
+                    
+                    with result_col2:
+                        st.write("**比較画像1**")
+                        comp1_annotated = draw_manual_points(images['comp1'], st.session_state.manual_points['comp1'])
+                        st.image(comp1_annotated, use_container_width=True)
+                        st.metric("類似度", f"{similarity1:.4f}")
+                    
+                    with result_col3:
+                        st.write("**比較画像2**")
+                        comp2_annotated = draw_manual_points(images['comp2'], st.session_state.manual_points['comp2'])
+                        st.image(comp2_annotated, use_container_width=True)
+                        st.metric("類似度", f"{similarity2:.4f}")
+                    
+                    with result_col4:
+                        st.write("**注釈統計**")
+                        st.write(f"総ポイント数: {min_points}")
+                        st.write(f"基準画像: {len(st.session_state.manual_points['base'])}点")
+                        st.write(f"比較画像1: {len(st.session_state.manual_points['comp1'])}点")
+                        st.write(f"比較画像2: {len(st.session_state.manual_points['comp2'])}点")
+        
+        elif min_points < 3:
+            st.info(f"💡 **ヒント**: 各画像に最低3点ずつ配置してください。現在: {min_points}点")
+        elif len(set(points_counts)) != 1:
+            st.warning(f"⚠️ 全ての画像に同じ数の点を配置してください。現在: 基準{points_counts[0]}点, 比較1{points_counts[1]}点, 比較2{points_counts[2]}点")
+    
+    else:
+        st.info("📷 3つの画像をすべてアップロードしてから手動アノテーションを開始してください。")
 
 def draw_manual_points(image, points):
     if not points:
         return image
     
     plotted_image = image.copy()
-    for point in points:
+    height, width = image.shape[:2]
+    point_size = max(3, min(width, height) // 150)
+    
+    for i, point in enumerate(points):
         x, y = int(point[0]), int(point[1])
-        cv2.circle(plotted_image, (x, y), 3, (255, 0, 0), -1)
+        
+        # ポイント番号によって色を変える
+        colors = [
+            (255, 0, 0),    # 赤
+            (0, 255, 0),    # 緑
+            (0, 0, 255),    # 青
+            (255, 255, 0),  # シアン
+            (255, 0, 255),  # マゼンタ
+            (0, 255, 255),  # 黄色
+            (128, 0, 128),  # 紫
+            (255, 165, 0),  # オレンジ
+        ]
+        
+        color = colors[i % len(colors)]
+        
+        # ポイントを描画
+        cv2.circle(plotted_image, (x, y), point_size + 2, (255, 255, 255), -1)  # 白い背景
+        cv2.circle(plotted_image, (x, y), point_size, color, -1)  # カラーポイント
+        
+        # ポイント番号を描画
+        font_scale = max(0.5, min(width, height) / 1000)
+        text_x = x + point_size + 5
+        text_y = y + point_size
+        
+        cv2.putText(plotted_image, str(i + 1), (text_x, text_y), 
+                   cv2.FONT_HERSHEY_SIMPLEX, font_scale, (255, 255, 255), 2)
+        cv2.putText(plotted_image, str(i + 1), (text_x, text_y), 
+                   cv2.FONT_HERSHEY_SIMPLEX, font_scale, color, 1)
+    
+    # 総ポイント数を表示
+    if points:
+        text = f"Points: {len(points)}"
+        cv2.putText(plotted_image, text, (10, 30), 
+                   cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
+        cv2.putText(plotted_image, text, (10, 30), 
+                   cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 0), 1)
     
     return plotted_image
 
