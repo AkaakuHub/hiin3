@@ -1278,6 +1278,11 @@ def manual_annotation_mode(
                     st.success("🏆 より類似")
                 else:
                     st.info("📊 類似度低")
+                st.metric(
+                    label="🔄 基準 vs 比較1",
+                    value=f"{similarity1:.4f}",
+                    help=help_text,
+                )
                 st.markdown("</div>", unsafe_allow_html=True)
 
             with final_col3:
@@ -1294,6 +1299,11 @@ def manual_annotation_mode(
                     st.success("🏆 より類似")
                 else:
                     st.info("📊 類似度低")
+                st.metric(
+                    label="🆚 基準 vs 比較2",
+                    value=f"{similarity2:.4f}",
+                    help=help_text,
+                )
                 st.markdown("</div>", unsafe_allow_html=True)
 
             with final_col4:
