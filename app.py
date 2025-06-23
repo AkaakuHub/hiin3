@@ -413,6 +413,9 @@ def main():
         padding: 1rem;
         border-radius: 10px;
     }
+    .stHorizontalBlock div {
+        color: #31333F;
+    }
     </style>
     """,
         unsafe_allow_html=True,
@@ -696,7 +699,7 @@ def auto_analysis_mode(
                 st.error(error)
             st.markdown(
                 """
-            <div style="background: #fff3cd; padding: 1rem; border-radius: 10px; margin: 1rem 0;">
+            <div style="background: #fff3cd; padding: 1rem; border-radius: 10px; margin: 1rem 0; color: #31333F;">
                 <strong>💡 改善のヒント:</strong><br>
                 • 顔が画像の中央に明確に写っているか確認<br>
                 • 十分な明るさがあるか確認<br>
@@ -932,7 +935,7 @@ def auto_analysis_mode(
     else:
         st.markdown(
             """
-        <div style="background: linear-gradient(135deg, #ffeaa7 0%, #fab1a0 100%); 
+        <div style="background: linear-gradient(135deg, #ffeaa7 0%, #fab1a0 100%); color: #31333F;
                     padding: 2rem; border-radius: 15px; text-align: center; margin: 2rem 0;">
             <h3>📸 画像をアップロードして開始</h3>
             <p>3つの画像をすべてアップロードすると、AI解析が自動で開始されます</p>
@@ -1014,7 +1017,7 @@ def manual_annotation_mode(
 
         st.markdown(
             f"""
-        <div style="background: linear-gradient(135deg, #74b9ff 0%, #0984e3 100%); 
+        <div style="background: linear-gradient(135deg, #74b9ff 0%, #0984e3 100%);
                     color: white; padding: 1.5rem; border-radius: 15px; text-align: center; margin: 1rem 0;">
             <h4>ステップ {total_points + 1}</h4>
             <p><strong>次にクリック:</strong> {current_name}</p>
@@ -1318,7 +1321,7 @@ def manual_annotation_mode(
     else:
         st.markdown(
             """
-        <div style="background: linear-gradient(135deg, #ffeaa7 0%, #fab1a0 100%); 
+        <div style="background: linear-gradient(135deg, #ffeaa7 0%, #fab1a0 100%); color: #31333F;
                     padding: 2rem; border-radius: 15px; text-align: center; margin: 2rem 0;">
             <h3>📷 手動アノテーション</h3>
             <p>3つの画像をすべてアップロードしてから手動アノテーションを開始してください</p>
